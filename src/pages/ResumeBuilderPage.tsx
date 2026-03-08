@@ -165,7 +165,7 @@ export default function ResumeBuilderPage() {
         languages: JSON.parse(JSON.stringify(languages)),
         achievements: JSON.parse(JSON.stringify(achievements)),
         hobbies: JSON.parse(JSON.stringify(hobbies)),
-        personal_details: JSON.parse(JSON.stringify(personalDetails)),
+        personal_details: JSON.parse(JSON.stringify({ ...personalDetails, name: resumeName, email: resumeEmail })),
       };
       await supabase.from("resumes").update(data).eq("id", resumeId);
     }, 2000);
