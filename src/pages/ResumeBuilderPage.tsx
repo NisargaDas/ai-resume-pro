@@ -76,6 +76,7 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
   certifications: <Award className="h-3.5 w-3.5" />,
   languages: <LanguagesIcon className="h-3.5 w-3.5" />,
   achievements: <Trophy className="h-3.5 w-3.5" />,
+  hobbies: <Trophy className="h-3.5 w-3.5" />,
 };
 
 export default function ResumeBuilderPage() {
