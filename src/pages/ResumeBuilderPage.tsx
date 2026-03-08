@@ -104,6 +104,7 @@ export default function ResumeBuilderPage() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [hobbies, setHobbies] = useState<Hobby[]>([]);
   const [personalDetails, setPersonalDetails] = useState<PersonalDetails>({ phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
   const [sections, setSections] = useState<ResumeSection[]>(DEFAULT_SECTIONS);
   const [activeSection, setActiveSection] = useState<string>("personal");
