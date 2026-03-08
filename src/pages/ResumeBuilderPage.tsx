@@ -117,15 +117,18 @@ export default function ResumeBuilderPage() {
           setResumeTitle(data.title);
           setTemplate(data.template);
           setSummary(data.summary || "");
+          setObjective((data as any).objective || "");
+          setProfileSummary((data as any).profile_summary || "");
           setSkills(data.skills || []);
           setJobDescription(data.job_description || "");
           setExperiences((data.experiences as unknown as Experience[]) || []);
+          setInternships(((data as any).internships as unknown as Internship[]) || []);
           setEducations((data.educations as unknown as Education[]) || []);
           setProjects((data.projects as unknown as Project[]) || []);
           setCertifications((data.certifications as unknown as Certification[]) || []);
           setLanguages((data.languages as unknown as Language[]) || []);
           setAchievements((data.achievements as unknown as Achievement[]) || []);
-          setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", linkedin: "", portfolio: "" });
+          setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
           setResumeId(data.id);
         }
         setLoading(false);
