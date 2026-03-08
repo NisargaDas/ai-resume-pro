@@ -170,7 +170,7 @@ export default function ResumeBuilderPage() {
       await supabase.from("resumes").update(data).eq("id", resumeId);
     }, 2000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [resumeTitle, template, summary, objective, profileSummary, skills, jobDescription, experiences, internships, educations, projects, certifications, languages, achievements, hobbies, personalDetails, resumeId, user, loading]);
+  }, [resumeTitle, template, summary, objective, profileSummary, skills, jobDescription, experiences, internships, educations, projects, certifications, languages, achievements, hobbies, personalDetails, resumeName, resumeEmail, resumeId, user, loading]);
 
   // ── CRUD helpers ──
   const addSkill = () => { if (newSkill.trim() && !skills.includes(newSkill.trim())) { setSkills([...skills, newSkill.trim()]); setNewSkill(""); } };
