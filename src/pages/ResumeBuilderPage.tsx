@@ -441,28 +441,16 @@ export default function ResumeBuilderPage() {
           {/* Section sidebar - draggable order */}
           <div className="w-40 shrink-0">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2 font-semibold">Sections</p>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
               <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                {sections.map(section => {
-                  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
-                  return (
-                    <div
-                      key={section.id}
-                      ref={setNodeRef}
-                      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
-                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs cursor-pointer mb-0.5 transition-colors ${
-                        activeSection === section.id ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-muted-foreground hover:bg-muted"
-                      }`}
-                      onClick={() => setActiveSection(section.id)}
-                    >
-                      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing shrink-0" type="button" onClick={e => e.stopPropagation()}>
-                        <GripVertical className="h-3 w-3" />
-                      </button>
-                      {SECTION_ICONS[section.type]}
-                      <span className="truncate">{section.label}</span>
-                    </div>
-                  );
-                })}
+                {sections.map(section => (
+                  <SortableSectionTab
+                    key={section.id}
+                    section={section}
+                    isActive={activeSection === section.id}
+                    onClick={() => setActiveSection(section.id)}
+                  />
+                ))}
               </SortableContext>
             </DndContext>
           </div>
