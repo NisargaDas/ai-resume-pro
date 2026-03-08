@@ -467,6 +467,9 @@ export default function ResumeBuilderPage() {
             <Button variant="outline" size="sm" onClick={handlePDF}>
               <Download className="h-4 w-4 mr-1" /> PDF
             </Button>
+            <Button variant="outline" size="sm" onClick={handleWord}>
+              <FileText className="h-4 w-4 mr-1" /> Word
+            </Button>
             <Button size="sm" className="gradient-primary text-primary-foreground" onClick={handleAISummary} disabled={aiLoading}>
               <Sparkles className="h-4 w-4 mr-1" /> {aiLoading ? "Working..." : "AI Improve"}
             </Button>
