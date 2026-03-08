@@ -190,6 +190,13 @@ export default function ResumeBuilderPage() {
     }
   };
 
+  const handleInternDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (over && active.id !== over.id) {
+      setInternships(arrayMove(internships, internships.findIndex(x => x.id === active.id), internships.findIndex(x => x.id === over.id)));
+    }
+  };
+
   const handleProjDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
     if (over && active.id !== over.id) {
