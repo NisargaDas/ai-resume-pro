@@ -98,6 +98,7 @@ export type Database = {
           id: string
           job_description: string | null
           languages: Json | null
+          personal_details: Json | null
           projects: Json | null
           skills: string[] | null
           summary: string | null
@@ -118,6 +119,7 @@ export type Database = {
           id?: string
           job_description?: string | null
           languages?: Json | null
+          personal_details?: Json | null
           projects?: Json | null
           skills?: string[] | null
           summary?: string | null
@@ -138,6 +140,7 @@ export type Database = {
           id?: string
           job_description?: string | null
           languages?: Json | null
+          personal_details?: Json | null
           projects?: Json | null
           skills?: string[] | null
           summary?: string | null
