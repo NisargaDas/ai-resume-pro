@@ -9,6 +9,7 @@ import { saveAs } from "file-saver";
 export interface PersonalDetails {
   phone: string;
   gender: string;
+  dob: string;
   linkedin: string;
   portfolio: string;
 }
@@ -21,11 +22,21 @@ export interface Experience {
   bullets: string[];
 }
 
+export interface Internship {
+  id: string;
+  company: string;
+  role: string;
+  period: string;
+  bullets: string[];
+}
+
 export interface Education {
   id: string;
   school: string;
   degree: string;
   year: string;
+  grade: string;
+  distinction: string;
 }
 
 export interface Project {
@@ -56,15 +67,17 @@ export interface Achievement {
 
 export interface ResumeSection {
   id: string;
-  type: "personal" | "summary" | "skills" | "experience" | "education" | "projects" | "certifications" | "languages" | "achievements";
+  type: "personal" | "objective" | "profile" | "summary" | "skills" | "experience" | "internship" | "education" | "projects" | "certifications" | "languages" | "achievements";
   label: string;
 }
 
 export const DEFAULT_SECTIONS: ResumeSection[] = [
   { id: "personal", type: "personal", label: "Personal Details" },
-  { id: "summary", type: "summary", label: "Summary" },
+  { id: "objective", type: "objective", label: "Objective" },
+  { id: "profile", type: "profile", label: "Profile" },
   { id: "skills", type: "skills", label: "Skills" },
   { id: "experience", type: "experience", label: "Experience" },
+  { id: "internship", type: "internship", label: "Internship" },
   { id: "education", type: "education", label: "Education" },
   { id: "projects", type: "projects", label: "Projects" },
   { id: "certifications", type: "certifications", label: "Certifications" },
@@ -110,9 +123,12 @@ export interface ResumeExportData {
   name: string;
   email: string;
   personalDetails: PersonalDetails;
+  objective: string;
+  profileSummary: string;
   summary: string;
   skills: string[];
   experiences: Experience[];
+  internships: Internship[];
   educations: Education[];
   projects: Project[];
   certifications: Certification[];
@@ -135,7 +151,7 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
     children.push(new Paragraph({
       children: [new TextRun({ text: data.email, size: 20, font: "Calibri", color: "666666" })],
       alignment: AlignmentType.CENTER,
-      spacing: { after: 200 },
+      spacing: { after: 100 },
     }));
   }
 
@@ -144,10 +160,19 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
   if (data.personalDetails.phone) contactParts.push(data.personalDetails.phone);
   if (data.personalDetails.linkedin) contactParts.push(data.personalDetails.linkedin);
   if (data.personalDetails.portfolio) contactParts.push(data.personalDetails.portfolio);
-  if (data.personalDetails.gender) contactParts.push(data.personalDetails.gender);
   if (contactParts.length > 0) {
     children.push(new Paragraph({
       children: [new TextRun({ text: contactParts.join("  |  "), size: 18, font: "Calibri", color: "666666" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+    }));
+  }
+  const personalParts: string[] = [];
+  if (data.personalDetails.gender) personalParts.push(`Gender: ${data.personalDetails.gender}`);
+  if (data.personalDetails.dob) personalParts.push(`DOB: ${data.personalDetails.dob}`);
+  if (personalParts.length > 0) {
+    children.push(new Paragraph({
+      children: [new TextRun({ text: personalParts.join("  |  "), size: 18, font: "Calibri", color: "666666" })],
       alignment: AlignmentType.CENTER,
       spacing: { after: 200 },
     }));
@@ -161,8 +186,50 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
     }));
   };
 
+  const renderExpEntries = (entries: (Experience | Internship)[]) => {
+    for (const exp of entries) {
+      children.push(new Paragraph({
+        children: [
+          new TextRun({ text: exp.role, bold: true, size: 21, font: "Calibri" }),
+          new TextRun({ text: `  |  ${exp.company}`, size: 21, font: "Calibri" }),
+        ],
+        spacing: { before: 80 },
+      }));
+      if (exp.period) {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: exp.period, size: 18, font: "Calibri", italics: true, color: "888888" })],
+        }));
+      }
+      for (const bullet of exp.bullets.filter(b => b.trim())) {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: bullet, size: 20, font: "Calibri" })],
+          bullet: { level: 0 },
+          spacing: { before: 20 },
+        }));
+      }
+    }
+  };
+
   for (const section of data.sections) {
     switch (section.type) {
+      case "objective":
+        if (data.objective) {
+          addHeading("Objective");
+          children.push(new Paragraph({
+            children: [new TextRun({ text: data.objective, size: 20, font: "Calibri" })],
+            spacing: { after: 120 },
+          }));
+        }
+        break;
+      case "profile":
+        if (data.profileSummary) {
+          addHeading("Profile");
+          children.push(new Paragraph({
+            children: [new TextRun({ text: data.profileSummary, size: 20, font: "Calibri" })],
+            spacing: { after: 120 },
+          }));
+        }
+        break;
       case "summary":
         if (data.summary) {
           addHeading("Summary");
@@ -184,27 +251,13 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
       case "experience":
         if (data.experiences.length > 0) {
           addHeading("Experience");
-          for (const exp of data.experiences) {
-            children.push(new Paragraph({
-              children: [
-                new TextRun({ text: exp.role, bold: true, size: 21, font: "Calibri" }),
-                new TextRun({ text: `  |  ${exp.company}`, size: 21, font: "Calibri" }),
-              ],
-              spacing: { before: 80 },
-            }));
-            if (exp.period) {
-              children.push(new Paragraph({
-                children: [new TextRun({ text: exp.period, size: 18, font: "Calibri", italics: true, color: "888888" })],
-              }));
-            }
-            for (const bullet of exp.bullets.filter(b => b.trim())) {
-              children.push(new Paragraph({
-                children: [new TextRun({ text: bullet, size: 20, font: "Calibri" })],
-                bullet: { level: 0 },
-                spacing: { before: 20 },
-              }));
-            }
-          }
+          renderExpEntries(data.experiences);
+        }
+        break;
+      case "internship":
+        if (data.internships.length > 0) {
+          addHeading("Internship");
+          renderExpEntries(data.internships);
         }
         break;
       case "education":
@@ -219,6 +272,14 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
               ],
               spacing: { before: 60 },
             }));
+            const extras: string[] = [];
+            if (edu.grade) extras.push(edu.grade);
+            if (edu.distinction) extras.push(edu.distinction);
+            if (extras.length > 0) {
+              children.push(new Paragraph({
+                children: [new TextRun({ text: extras.join("  |  "), size: 18, font: "Calibri", color: "888888", italics: true })],
+              }));
+            }
           }
         }
         break;
@@ -281,6 +342,8 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
             }));
           }
         }
+        break;
+      default:
         break;
     }
   }
