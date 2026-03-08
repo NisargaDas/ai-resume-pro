@@ -140,6 +140,7 @@ export interface ResumeExportData {
   certifications: Certification[];
   languages: Language[];
   achievements: Achievement[];
+  hobbies: Hobby[];
   sections: ResumeSection[];
 }
 
