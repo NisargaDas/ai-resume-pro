@@ -144,6 +144,10 @@ export default function ResumeBuilderPage() {
   const updateExp = (idx: number, field: string, value: any) => setExperiences(experiences.map((e, i) => i === idx ? { ...e, [field]: value } : e));
   const removeExp = (idx: number) => setExperiences(experiences.filter((_, i) => i !== idx));
 
+  const addInternship = () => setInternships([...internships, { id: generateId(), company: "", role: "", period: "", bullets: [""] }]);
+  const updateIntern = (idx: number, field: string, value: any) => setInternships(internships.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+  const removeIntern = (idx: number) => setInternships(internships.filter((_, i) => i !== idx));
+
   const addEducation = () => setEducations([...educations, { id: generateId(), school: "", degree: "", year: "", grade: "", distinction: "" }]);
   const updateEdu = (idx: number, field: string, value: string) => setEducations(educations.map((e, i) => i === idx ? { ...e, [field]: value } : e));
   const removeEdu = (idx: number) => setEducations(educations.filter((_, i) => i !== idx));
