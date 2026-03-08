@@ -205,7 +205,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
       }
     };
 
-    const hasContent = summary || objective || profileSummary || skills.length > 0 || experiences.length > 0 || internships.length > 0 || educations.length > 0 || projects.length > 0 || certifications.length > 0 || languages.length > 0 || achievements.length > 0 || personalDetails.phone || personalDetails.linkedin || personalDetails.portfolio;
+    const hasContent = summary || objective || profileSummary || skills.length > 0 || experiences.length > 0 || internships.length > 0 || educations.length > 0 || projects.length > 0 || certifications.length > 0 || languages.length > 0 || achievements.length > 0 || hobbies.length > 0 || personalDetails.phone || personalDetails.linkedin || personalDetails.portfolio;
 
     return (
       <div ref={ref} className="bg-card p-8 space-y-5" id="resume-preview">
