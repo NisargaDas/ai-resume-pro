@@ -22,7 +22,7 @@ interface ResumePreviewProps {
 }
 
 export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
-  ({ name, email, personalDetails, objective, profileSummary, title, summary, skills, experiences, internships, educations, projects, certifications, languages, achievements, sections }, ref) => {
+  ({ name, email, personalDetails, objective, profileSummary, title, summary, skills, experiences, internships, educations, projects, certifications, languages, achievements, hobbies, sections }, ref) => {
 
     const renderExpEntries = (entries: (Experience | Internship)[]) =>
       entries.map(exp => (
