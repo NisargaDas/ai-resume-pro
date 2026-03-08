@@ -6,6 +6,13 @@ import {
 } from "docx";
 import { saveAs } from "file-saver";
 
+export interface PersonalDetails {
+  phone: string;
+  gender: string;
+  linkedin: string;
+  portfolio: string;
+}
+
 export interface Experience {
   id: string;
   company: string;
