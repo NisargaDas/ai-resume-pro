@@ -551,10 +551,13 @@ export default function ResumeBuilderPage() {
               name={profile?.full_name || ""}
               email={user?.email || ""}
               personalDetails={personalDetails}
+              objective={objective}
+              profileSummary={profileSummary}
               title={resumeTitle}
               summary={summary}
               skills={skills}
               experiences={experiences}
+              internships={internships}
               educations={educations}
               projects={projects}
               certifications={certifications}
