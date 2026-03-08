@@ -41,6 +41,27 @@ function SortableCard({ id, children }: { id: string; children: React.ReactNode 
   );
 }
 
+// ── Sortable section tab ──
+function SortableSectionTab({ section, isActive, onClick }: { section: ResumeSection; isActive: boolean; onClick: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs cursor-pointer mb-0.5 transition-colors ${
+        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-muted-foreground hover:bg-muted"
+      }`}
+      onClick={onClick}
+    >
+      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing shrink-0" type="button" onClick={e => e.stopPropagation()}>
+        <GripVertical className="h-3 w-3" />
+      </button>
+      {SECTION_ICONS[section.type]}
+      <span className="truncate">{section.label}</span>
+    </div>
+  );
+}
+
 // ── Section icons ──
 const SECTION_ICONS: Record<string, React.ReactNode> = {
   summary: <User className="h-3.5 w-3.5" />,
