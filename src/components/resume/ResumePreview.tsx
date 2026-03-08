@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import type { ResumeSection, Experience, Internship, Education, Project, Certification, Language, Achievement, PersonalDetails } from "@/lib/resume-types";
+import type { ResumeSection, Experience, Internship, Education, Project, Certification, Language, Achievement, Hobby, PersonalDetails } from "@/lib/resume-types";
 
 interface ResumePreviewProps {
   name: string;
