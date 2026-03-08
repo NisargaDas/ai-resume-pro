@@ -304,7 +304,11 @@ export default function ResumeBuilderPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Phone Number</Label>
-              <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="+1 (555) 123-4567" />
+              <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="+91 7019641441" />
+            </div>
+            <div className="space-y-2">
+              <Label>Date of Birth</Label>
+              <Input value={personalDetails.dob} onChange={e => setPersonalDetails({ ...personalDetails, dob: e.target.value })} placeholder="e.g., 08/06/2004" />
             </div>
             <div className="space-y-2">
               <Label>Gender</Label>
