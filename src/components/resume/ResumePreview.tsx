@@ -1,9 +1,10 @@
 import { forwardRef } from "react";
-import type { ResumeSection, Experience, Education, Project, Certification, Language, Achievement } from "@/lib/resume-types";
+import type { ResumeSection, Experience, Education, Project, Certification, Language, Achievement, PersonalDetails } from "@/lib/resume-types";
 
 interface ResumePreviewProps {
   name: string;
   email: string;
+  personalDetails: PersonalDetails;
   title: string;
   summary: string;
   skills: string[];
@@ -17,10 +18,25 @@ interface ResumePreviewProps {
 }
 
 export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
-  ({ name, email, title, summary, skills, experiences, educations, projects, certifications, languages, achievements, sections }, ref) => {
+  ({ name, email, personalDetails, title, summary, skills, experiences, educations, projects, certifications, languages, achievements, sections }, ref) => {
 
     const renderSection = (section: ResumeSection) => {
       switch (section.type) {
+        case "personal": {
+          const details = [personalDetails.phone, personalDetails.linkedin, personalDetails.portfolio].filter(Boolean);
+          return details.length > 0 || personalDetails.gender ? (
+            <div key={section.id}>
+              <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Personal Details</h3>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-foreground">
+                {personalDetails.phone && <span>📞 {personalDetails.phone}</span>}
+                {personalDetails.gender && <span>⚧ {personalDetails.gender}</span>}
+                {personalDetails.linkedin && <span>🔗 {personalDetails.linkedin}</span>}
+                {personalDetails.portfolio && <span>🌐 {personalDetails.portfolio}</span>}
+              </div>
+            </div>
+          ) : null;
+        }
+
         case "summary":
           return summary ? (
             <div key={section.id}>
@@ -139,7 +155,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
       }
     };
 
-    const hasContent = summary || skills.length > 0 || experiences.length > 0 || educations.length > 0 || projects.length > 0 || certifications.length > 0 || languages.length > 0 || achievements.length > 0;
+    const hasContent = summary || skills.length > 0 || experiences.length > 0 || educations.length > 0 || projects.length > 0 || certifications.length > 0 || languages.length > 0 || achievements.length > 0 || personalDetails.phone || personalDetails.linkedin || personalDetails.portfolio;
 
     return (
       <div ref={ref} className="bg-card p-8 space-y-5" id="resume-preview">

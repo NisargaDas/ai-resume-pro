@@ -277,6 +277,28 @@ export default function ResumeBuilderPage() {
   // ── Section editor renderers ──
   const renderSectionEditor = () => {
     switch (activeSection) {
+      case "personal":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="+1 (555) 123-4567" />
+            </div>
+            <div className="space-y-2">
+              <Label>Gender</Label>
+              <Input value={personalDetails.gender} onChange={e => setPersonalDetails({ ...personalDetails, gender: e.target.value })} placeholder="e.g., Male, Female, Non-binary" />
+            </div>
+            <div className="space-y-2">
+              <Label>LinkedIn</Label>
+              <Input value={personalDetails.linkedin} onChange={e => setPersonalDetails({ ...personalDetails, linkedin: e.target.value })} placeholder="https://linkedin.com/in/yourname" />
+            </div>
+            <div className="space-y-2">
+              <Label>Portfolio</Label>
+              <Input value={personalDetails.portfolio} onChange={e => setPersonalDetails({ ...personalDetails, portfolio: e.target.value })} placeholder="https://yourportfolio.com" />
+            </div>
+          </div>
+        );
+
       case "summary":
         return (
           <div className="space-y-4">
