@@ -10,7 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -42,7 +43,13 @@ const bottomItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
@@ -52,9 +59,7 @@ export function AppSidebar() {
             <FileText className="h-4 w-4 text-primary-foreground" />
           </div>
           {!collapsed && (
-            <span className="font-display font-bold text-lg text-foreground">
-              ResumeAI
-            </span>
+            <span className="font-display font-bold text-lg text-foreground">ResumeAI</span>
           )}
         </div>
       </SidebarHeader>
@@ -99,14 +104,13 @@ export function AppSidebar() {
           ))}
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <NavLink
-                to="/login"
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                activeClassName=""
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors w-full"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 {!collapsed && <span>Logout</span>}
-              </NavLink>
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
