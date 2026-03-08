@@ -24,7 +24,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import {
-  Experience, Education, Project, Certification, Language, Achievement, PersonalDetails, Internship,
+  Experience, Education, Project, Certification, Language, Achievement, PersonalDetails, Internship, Hobby,
   ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF, downloadResumeWord,
 } from "@/lib/resume-types";
 
