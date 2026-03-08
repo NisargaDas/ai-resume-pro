@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,29 +9,105 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Sparkles, Target, FileText, Briefcase, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { callAI, parseAIJson } from "@/lib/ai";
 
 export default function AIToolsPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [jobDescription, setJobDescription] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [jobRole, setJobRole] = useState("");
-  const [showATSResult, setShowATSResult] = useState(false);
-  const [showCoverLetter, setShowCoverLetter] = useState(false);
+  const [atsResult, setAtsResult] = useState<{ score: number; missingKeywords: string[]; suggestions: string[] } | null>(null);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [jobMatches, setJobMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [resumes, setResumes] = useState<any[]>([]);
 
-  const missingKeywords = ["Python", "Docker", "REST API", "Agile", "CI/CD"];
-  const suggestions = [
-    "Add measurable achievements to bullet points",
-    "Include more technical skills relevant to the role",
-    "Quantify your impact with metrics and percentages",
-    "Use stronger action verbs at the start of bullet points",
-  ];
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+      supabase.from("resumes").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
+    ]).then(([{ data: p }, { data: r }]) => {
+      setProfile(p);
+      setResumes(r || []);
+    });
+  }, [user]);
 
-  const matchedJobs = [
-    { role: "Software Developer", match: 92, skills: ["React", "TypeScript", "Node.js"] },
-    { role: "Data Analyst", match: 78, skills: ["Python", "SQL", "Analytics"] },
-    { role: "Backend Engineer", match: 85, skills: ["Node.js", "PostgreSQL", "AWS"] },
-    { role: "Full Stack Developer", match: 88, skills: ["React", "Node.js", "TypeScript"] },
-  ];
+  const latestResume = resumes[0];
+
+  const handleATS = async () => {
+    if (!jobDescription) { toast({ title: "Paste a job description first", variant: "destructive" }); return; }
+    if (!latestResume) { toast({ title: "Create a resume first", variant: "destructive" }); return; }
+    setLoading(true);
+    try {
+      const raw = await callAI("ats-score", {
+        title: latestResume.title,
+        summary: latestResume.summary,
+        skills: latestResume.skills,
+        experiences: latestResume.experiences,
+        jobDescription,
+      });
+      const result = parseAIJson<{ score: number; missingKeywords: string[]; suggestions: string[] }>(raw);
+      setAtsResult(result);
+
+      // Save ATS score to resume
+      await supabase.from("resumes").update({ ats_score: result.score, job_description: jobDescription }).eq("id", latestResume.id);
+      toast({ title: "Analysis complete!" });
+    } catch (e: any) {
+      toast({ title: "AI Error", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  };
+
+  const handleCoverLetter = async () => {
+    if (!companyName || !jobRole) { toast({ title: "Fill in company and role", variant: "destructive" }); return; }
+    setLoading(true);
+    try {
+      const result = await callAI("cover-letter", {
+        companyName,
+        jobRole,
+        jobDescription,
+        name: profile?.full_name || "Candidate",
+        skills: profile?.skills || [],
+        summary: latestResume?.summary || "",
+      });
+      setCoverLetter(result);
+
+      // Save to database
+      await supabase.from("cover_letters").insert({
+        user_id: user!.id,
+        company_name: companyName,
+        job_role: jobRole,
+        job_description: jobDescription,
+        content: result,
+      });
+      toast({ title: "Cover letter generated!" });
+    } catch (e: any) {
+      toast({ title: "AI Error", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  };
+
+  const handleJobMatch = async () => {
+    if (!profile?.skills?.length) { toast({ title: "Add skills to your profile first", variant: "destructive" }); return; }
+    setLoading(true);
+    try {
+      const raw = await callAI("job-match", {
+        skills: profile.skills,
+        summary: latestResume?.summary || profile.headline || "",
+      });
+      const matches = parseAIJson<any[]>(raw);
+      setJobMatches(matches);
+      toast({ title: "Job matches found!" });
+    } catch (e: any) {
+      toast({ title: "AI Error", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -47,64 +123,52 @@ export default function AIToolsPage() {
           <TabsTrigger value="jobs"><Briefcase className="h-4 w-4 mr-1" />Job Match</TabsTrigger>
         </TabsList>
 
-        {/* ATS Score Checker */}
         <TabsContent value="ats" className="space-y-4 mt-4">
           <Card className="shadow-card">
             <CardContent className="p-5 space-y-4">
               <div className="space-y-2">
                 <Label>Paste Job Description</Label>
-                <Textarea
-                  rows={4}
-                  placeholder="Paste the job description here to analyze your resume..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                />
+                <Textarea rows={4} placeholder="Paste the job description here to analyze your latest resume..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
               </div>
-              <Button
-                className="gradient-primary text-primary-foreground"
-                onClick={() => { setShowATSResult(true); toast({ title: "Analysis complete!" }); }}
-              >
-                <Target className="h-4 w-4 mr-2" /> Analyze Resume
+              {!latestResume && <p className="text-xs text-muted-foreground">⚠️ Create a resume first to use the ATS checker</p>}
+              <Button className="gradient-primary text-primary-foreground" onClick={handleATS} disabled={loading || !latestResume}>
+                <Target className="h-4 w-4 mr-2" /> {loading ? "Analyzing..." : "Analyze Resume"}
               </Button>
             </CardContent>
           </Card>
 
-          {showATSResult && (
+          {atsResult && (
             <div className="space-y-4">
               <Card className="shadow-card border-l-4 border-l-accent">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-display font-semibold">ATS Score</h3>
-                    <span className="font-display text-3xl font-bold text-accent">76%</span>
+                    <span className="font-display text-3xl font-bold text-accent">{atsResult.score}%</span>
                   </div>
-                  <Progress value={76} className="h-3 mb-2" />
-                  <p className="text-xs text-muted-foreground">Your resume matches 76% of the job requirements</p>
+                  <Progress value={atsResult.score} className="h-3 mb-2" />
                 </CardContent>
               </Card>
-
               <Card className="shadow-card">
                 <CardContent className="p-5">
-                  <h3 className="font-display font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <h3 className="font-display font-semibold flex items-center gap-2 mb-3">
                     <AlertTriangle className="h-4 w-4 text-chart-3" /> Missing Keywords
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {missingKeywords.map((kw) => (
+                    {atsResult.missingKeywords.map((kw) => (
                       <Badge key={kw} variant="outline" className="border-destructive text-destructive">{kw}</Badge>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-
               <Card className="shadow-card">
                 <CardContent className="p-5">
-                  <h3 className="font-display font-semibold text-foreground flex items-center gap-2 mb-3">
-                    <Sparkles className="h-4 w-4 text-primary" /> Optimization Suggestions
+                  <h3 className="font-display font-semibold flex items-center gap-2 mb-3">
+                    <Sparkles className="h-4 w-4 text-primary" /> Suggestions
                   </h3>
                   <ul className="space-y-2">
-                    {suggestions.map((s, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                        <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                        {s}
+                    {atsResult.suggestions.map((s, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" /> {s}
                       </li>
                     ))}
                   </ul>
@@ -114,7 +178,6 @@ export default function AIToolsPage() {
           )}
         </TabsContent>
 
-        {/* Cover Letter Generator */}
         <TabsContent value="cover" className="space-y-4 mt-4">
           <Card className="shadow-card">
             <CardContent className="p-5 space-y-4">
@@ -129,54 +192,30 @@ export default function AIToolsPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Job Description</Label>
-                <Textarea rows={3} placeholder="Paste the job description..." />
+                <Label>Job Description (optional)</Label>
+                <Textarea rows={3} placeholder="Paste the job description..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
               </div>
-              <Button
-                className="gradient-primary text-primary-foreground"
-                onClick={() => { setShowCoverLetter(true); toast({ title: "Cover letter generated!" }); }}
-              >
-                <Sparkles className="h-4 w-4 mr-2" /> Generate Cover Letter
+              <Button className="gradient-primary text-primary-foreground" onClick={handleCoverLetter} disabled={loading}>
+                <Sparkles className="h-4 w-4 mr-2" /> {loading ? "Generating..." : "Generate Cover Letter"}
               </Button>
             </CardContent>
           </Card>
 
-          {showCoverLetter && (
+          {coverLetter && (
             <Card className="shadow-card">
               <CardContent className="p-6">
-                <div className="prose prose-sm max-w-none text-foreground space-y-3">
-                  <p>Dear Hiring Manager,</p>
-                  <p>
-                    I am writing to express my interest in the {jobRole || "Software Engineer"} position at{" "}
-                    {companyName || "your company"}. With over 5 years of experience in software development and a proven
-                    track record of building scalable applications, I am confident in my ability to contribute to your team.
-                  </p>
-                  <p>
-                    In my current role at TechCorp Inc., I led the development of a React-based dashboard serving over
-                    50,000 users, and reduced API response times by 40% through query optimization. These experiences have
-                    honed my skills in full-stack development and team leadership.
-                  </p>
-                  <p>
-                    I am particularly excited about this opportunity because of {companyName || "your company"}'s commitment
-                    to innovation and its impact on the industry. I look forward to the possibility of contributing my
-                    expertise to your team.
-                  </p>
-                  <p>Best regards,<br />John Doe</p>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button variant="outline" size="sm">Edit</Button>
-                  <Button variant="outline" size="sm">Download</Button>
-                </div>
+                <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">{coverLetter}</div>
               </CardContent>
             </Card>
           )}
         </TabsContent>
 
-        {/* Job Match */}
         <TabsContent value="jobs" className="space-y-4 mt-4">
-          <p className="text-sm text-muted-foreground">Based on your profile and skills, here are your best job matches:</p>
-          {matchedJobs.map((job) => (
-            <Card key={job.role} className="shadow-card hover:shadow-elevated transition-shadow">
+          <Button className="gradient-primary text-primary-foreground" onClick={handleJobMatch} disabled={loading}>
+            <Briefcase className="h-4 w-4 mr-2" /> {loading ? "Finding matches..." : "Find Job Matches"}
+          </Button>
+          {jobMatches.length > 0 && jobMatches.map((job, i) => (
+            <Card key={i} className="shadow-card hover:shadow-elevated transition-shadow">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -185,7 +224,7 @@ export default function AIToolsPage() {
                   <div>
                     <p className="font-medium text-foreground">{job.role}</p>
                     <div className="flex gap-1 mt-1">
-                      {job.skills.map((s) => (
+                      {(job.requiredSkills || []).slice(0, 3).map((s: string) => (
                         <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
                       ))}
                     </div>
