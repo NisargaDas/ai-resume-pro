@@ -271,7 +271,7 @@ export default function ResumeBuilderPage() {
         email: user?.email || "",
         personalDetails, objective, profileSummary,
         summary, skills, experiences, internships, educations, projects,
-        certifications, languages, achievements, sections,
+        certifications, languages, achievements, hobbies, sections,
       }, resumeTitle);
       toast({ title: "Word document downloaded!" });
       if (resumeId) await supabase.from("resumes").update({ downloads: (await supabase.from("resumes").select("downloads").eq("id", resumeId).single()).data?.downloads! + 1 }).eq("id", resumeId);
