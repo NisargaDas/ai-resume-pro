@@ -173,6 +173,10 @@ export default function ResumeBuilderPage() {
   const updateAch = (idx: number, value: string) => setAchievements(achievements.map((a, i) => i === idx ? { ...a, text: value } : a));
   const removeAch = (idx: number) => setAchievements(achievements.filter((_, i) => i !== idx));
 
+  const addHobby = () => setHobbies([...hobbies, { id: generateId(), name: "" }]);
+  const updateHobby = (idx: number, value: string) => setHobbies(hobbies.map((h, i) => i === idx ? { ...h, name: value } : h));
+  const removeHobby = (idx: number) => setHobbies(hobbies.filter((_, i) => i !== idx));
+
   // ── DnD for experiences ──
   const handleExpDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
