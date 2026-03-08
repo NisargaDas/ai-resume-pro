@@ -122,6 +122,7 @@ export default function ResumeBuilderPage() {
           setCertifications((data.certifications as unknown as Certification[]) || []);
           setLanguages((data.languages as unknown as Language[]) || []);
           setAchievements((data.achievements as unknown as Achievement[]) || []);
+          setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", linkedin: "", portfolio: "" });
           setResumeId(data.id);
         }
         setLoading(false);
