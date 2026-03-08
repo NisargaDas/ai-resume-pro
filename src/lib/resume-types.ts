@@ -139,6 +139,20 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
     }));
   }
 
+  // Personal contact line
+  const contactParts: string[] = [];
+  if (data.personalDetails.phone) contactParts.push(data.personalDetails.phone);
+  if (data.personalDetails.linkedin) contactParts.push(data.personalDetails.linkedin);
+  if (data.personalDetails.portfolio) contactParts.push(data.personalDetails.portfolio);
+  if (data.personalDetails.gender) contactParts.push(data.personalDetails.gender);
+  if (contactParts.length > 0) {
+    children.push(new Paragraph({
+      children: [new TextRun({ text: contactParts.join("  |  "), size: 18, font: "Calibri", color: "666666" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+    }));
+  }
+
   const addHeading = (text: string) => {
     children.push(new Paragraph({
       children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 22, font: "Calibri", color: "2563EB" })],
