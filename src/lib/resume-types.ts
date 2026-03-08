@@ -56,7 +56,7 @@ export interface Achievement {
 
 export interface ResumeSection {
   id: string;
-  type: "summary" | "skills" | "experience" | "education" | "projects" | "certifications" | "languages" | "achievements";
+  type: "personal" | "summary" | "skills" | "experience" | "education" | "projects" | "certifications" | "languages" | "achievements";
   label: string;
 }
 
