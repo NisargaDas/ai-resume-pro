@@ -337,23 +337,23 @@ export default function ResumeBuilderPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Phone Number</Label>
-              <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="+91 7019641441" />
+              <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="e.g., +1 234 567 8900" />
             </div>
             <div className="space-y-2">
               <Label>Date of Birth</Label>
-              <Input value={personalDetails.dob} onChange={e => setPersonalDetails({ ...personalDetails, dob: e.target.value })} placeholder="e.g., 08/06/2004" />
+              <Input value={personalDetails.dob} onChange={e => setPersonalDetails({ ...personalDetails, dob: e.target.value })} placeholder="e.g., DD/MM/YYYY" />
             </div>
             <div className="space-y-2">
               <Label>Gender</Label>
-              <Input value={personalDetails.gender} onChange={e => setPersonalDetails({ ...personalDetails, gender: e.target.value })} placeholder="e.g., Male, Female, Non-binary" />
+              <Input value={personalDetails.gender} onChange={e => setPersonalDetails({ ...personalDetails, gender: e.target.value })} placeholder="e.g., Male" />
             </div>
             <div className="space-y-2">
               <Label>LinkedIn</Label>
-              <Input value={personalDetails.linkedin} onChange={e => setPersonalDetails({ ...personalDetails, linkedin: e.target.value })} placeholder="https://linkedin.com/in/yourname" />
+              <Input value={personalDetails.linkedin} onChange={e => setPersonalDetails({ ...personalDetails, linkedin: e.target.value })} placeholder="e.g., linkedin.com/in/username" />
             </div>
             <div className="space-y-2">
               <Label>Portfolio</Label>
-              <Input value={personalDetails.portfolio} onChange={e => setPersonalDetails({ ...personalDetails, portfolio: e.target.value })} placeholder="https://yourportfolio.com" />
+              <Input value={personalDetails.portfolio} onChange={e => setPersonalDetails({ ...personalDetails, portfolio: e.target.value })} placeholder="e.g., yoursite.com" />
             </div>
           </div>
         );
