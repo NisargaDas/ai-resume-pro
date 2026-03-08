@@ -14,7 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cover_letters: {
+        Row: {
+          company_name: string | null
+          content: string | null
+          created_at: string
+          id: string
+          job_description: string | null
+          job_role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          job_description?: string | null
+          job_role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          job_description?: string | null
+          job_role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          headline: string | null
+          id: string
+          location: string | null
+          skills: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          headline?: string | null
+          id?: string
+          location?: string | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          headline?: string | null
+          id?: string
+          location?: string | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      resumes: {
+        Row: {
+          achievements: Json | null
+          ats_score: number | null
+          certifications: Json | null
+          created_at: string
+          downloads: number | null
+          educations: Json | null
+          experiences: Json | null
+          id: string
+          job_description: string | null
+          languages: Json | null
+          projects: Json | null
+          skills: string[] | null
+          summary: string | null
+          template: string
+          title: string
+          updated_at: string
+          user_id: string
+          views: number | null
+        }
+        Insert: {
+          achievements?: Json | null
+          ats_score?: number | null
+          certifications?: Json | null
+          created_at?: string
+          downloads?: number | null
+          educations?: Json | null
+          experiences?: Json | null
+          id?: string
+          job_description?: string | null
+          languages?: Json | null
+          projects?: Json | null
+          skills?: string[] | null
+          summary?: string | null
+          template?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+          views?: number | null
+        }
+        Update: {
+          achievements?: Json | null
+          ats_score?: number | null
+          certifications?: Json | null
+          created_at?: string
+          downloads?: number | null
+          educations?: Json | null
+          experiences?: Json | null
+          id?: string
+          job_description?: string | null
+          languages?: Json | null
+          projects?: Json | null
+          skills?: string[] | null
+          summary?: string | null
+          template?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
