@@ -320,10 +320,10 @@ export default function ResumeBuilderPage() {
   };
 
   const handleAISuggestSkills = async () => {
-    if (!jobDescription) { toast({ title: "Add a job description first", variant: "destructive" }); return; }
     setAiLoading(true);
     try {
-      const result = await callAI("suggest-skills", { jobDescription });
+      const context = jobDescription || `Role: ${resumeTitle || "General"}. Summary: ${summary || ""}. Existing skills: ${skills.join(", ") || "none"}`;
+      const result = await callAI("suggest-skills", { jobDescription: context });
       const suggested = parseAIJson<string[]>(result);
       setSkills([...skills, ...suggested.filter(s => !skills.includes(s))]);
       toast({ title: "Skills suggested!" });
