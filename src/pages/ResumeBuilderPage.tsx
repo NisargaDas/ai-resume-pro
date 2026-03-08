@@ -24,7 +24,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import {
-  Experience, Education, Project, Certification, Language, Achievement, PersonalDetails,
+  Experience, Education, Project, Certification, Language, Achievement, PersonalDetails, Internship,
   ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF, downloadResumeWord,
 } from "@/lib/resume-types";
 
@@ -66,8 +66,11 @@ function SortableSectionTab({ section, isActive, onClick }: { section: ResumeSec
 const SECTION_ICONS: Record<string, React.ReactNode> = {
   personal: <User className="h-3.5 w-3.5" />,
   summary: <User className="h-3.5 w-3.5" />,
+  objective: <FileText className="h-3.5 w-3.5" />,
+  profile: <User className="h-3.5 w-3.5" />,
   skills: <Code className="h-3.5 w-3.5" />,
   experience: <Briefcase className="h-3.5 w-3.5" />,
+  internship: <Briefcase className="h-3.5 w-3.5" />,
   education: <GraduationCap className="h-3.5 w-3.5" />,
   projects: <Code className="h-3.5 w-3.5" />,
   certifications: <Award className="h-3.5 w-3.5" />,
@@ -88,16 +91,19 @@ export default function ResumeBuilderPage() {
   const [resumeTitle, setResumeTitle] = useState("Untitled Resume");
   const [template, setTemplate] = useState("modern");
   const [summary, setSummary] = useState("");
+  const [objective, setObjective] = useState("");
+  const [profileSummary, setProfileSummary] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [internships, setInternships] = useState<Internship[]>([]);
   const [educations, setEducations] = useState<Education[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [personalDetails, setPersonalDetails] = useState<PersonalDetails>({ phone: "", gender: "", linkedin: "", portfolio: "" });
+  const [personalDetails, setPersonalDetails] = useState<PersonalDetails>({ phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
   const [sections, setSections] = useState<ResumeSection[]>(DEFAULT_SECTIONS);
   const [activeSection, setActiveSection] = useState<string>("personal");
   const [loading, setLoading] = useState(!!id);
@@ -114,15 +120,18 @@ export default function ResumeBuilderPage() {
           setResumeTitle(data.title);
           setTemplate(data.template);
           setSummary(data.summary || "");
+          setObjective((data as any).objective || "");
+          setProfileSummary((data as any).profile_summary || "");
           setSkills(data.skills || []);
           setJobDescription(data.job_description || "");
           setExperiences((data.experiences as unknown as Experience[]) || []);
+          setInternships(((data as any).internships as unknown as Internship[]) || []);
           setEducations((data.educations as unknown as Education[]) || []);
           setProjects((data.projects as unknown as Project[]) || []);
           setCertifications((data.certifications as unknown as Certification[]) || []);
           setLanguages((data.languages as unknown as Language[]) || []);
           setAchievements((data.achievements as unknown as Achievement[]) || []);
-          setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", linkedin: "", portfolio: "" });
+          setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
           setResumeId(data.id);
         }
         setLoading(false);
@@ -138,7 +147,11 @@ export default function ResumeBuilderPage() {
   const updateExp = (idx: number, field: string, value: any) => setExperiences(experiences.map((e, i) => i === idx ? { ...e, [field]: value } : e));
   const removeExp = (idx: number) => setExperiences(experiences.filter((_, i) => i !== idx));
 
-  const addEducation = () => setEducations([...educations, { id: generateId(), school: "", degree: "", year: "" }]);
+  const addInternship = () => setInternships([...internships, { id: generateId(), company: "", role: "", period: "", bullets: [""] }]);
+  const updateIntern = (idx: number, field: string, value: any) => setInternships(internships.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+  const removeIntern = (idx: number) => setInternships(internships.filter((_, i) => i !== idx));
+
+  const addEducation = () => setEducations([...educations, { id: generateId(), school: "", degree: "", year: "", grade: "", distinction: "" }]);
   const updateEdu = (idx: number, field: string, value: string) => setEducations(educations.map((e, i) => i === idx ? { ...e, [field]: value } : e));
   const removeEdu = (idx: number) => setEducations(educations.filter((_, i) => i !== idx));
 
@@ -177,6 +190,13 @@ export default function ResumeBuilderPage() {
     }
   };
 
+  const handleInternDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (over && active.id !== over.id) {
+      setInternships(arrayMove(internships, internships.findIndex(x => x.id === active.id), internships.findIndex(x => x.id === over.id)));
+    }
+  };
+
   const handleProjDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
     if (over && active.id !== over.id) {
@@ -198,7 +218,9 @@ export default function ResumeBuilderPage() {
     const data = {
       user_id: user.id, title: resumeTitle, template, summary, skills,
       job_description: jobDescription,
+      objective, profile_summary: profileSummary,
       experiences: JSON.parse(JSON.stringify(experiences)),
+      internships: JSON.parse(JSON.stringify(internships)),
       educations: JSON.parse(JSON.stringify(educations)),
       projects: JSON.parse(JSON.stringify(projects)),
       certifications: JSON.parse(JSON.stringify(certifications)),
@@ -239,8 +261,8 @@ export default function ResumeBuilderPage() {
       await downloadResumeWord({
         name: profile?.full_name || "",
         email: user?.email || "",
-        personalDetails,
-        summary, skills, experiences, educations, projects,
+        personalDetails, objective, profileSummary,
+        summary, skills, experiences, internships, educations, projects,
         certifications, languages, achievements, sections,
       }, resumeTitle);
       toast({ title: "Word document downloaded!" });
@@ -282,7 +304,11 @@ export default function ResumeBuilderPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Phone Number</Label>
-              <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="+1 (555) 123-4567" />
+              <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="+91 7019641441" />
+            </div>
+            <div className="space-y-2">
+              <Label>Date of Birth</Label>
+              <Input value={personalDetails.dob} onChange={e => setPersonalDetails({ ...personalDetails, dob: e.target.value })} placeholder="e.g., 08/06/2004" />
             </div>
             <div className="space-y-2">
               <Label>Gender</Label>
@@ -295,6 +321,26 @@ export default function ResumeBuilderPage() {
             <div className="space-y-2">
               <Label>Portfolio</Label>
               <Input value={personalDetails.portfolio} onChange={e => setPersonalDetails({ ...personalDetails, portfolio: e.target.value })} placeholder="https://yourportfolio.com" />
+            </div>
+          </div>
+        );
+
+      case "objective":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Career Objective</Label>
+              <Textarea rows={4} value={objective} onChange={e => setObjective(e.target.value)} placeholder="Write your career objective..." />
+            </div>
+          </div>
+        );
+
+      case "profile":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Profile Description</Label>
+              <Textarea rows={5} value={profileSummary} onChange={e => setProfileSummary(e.target.value)} placeholder="Write a detailed profile description..." />
             </div>
           </div>
         );
@@ -373,6 +419,35 @@ export default function ResumeBuilderPage() {
           </div>
         );
 
+      case "internship":
+        return (
+          <div className="space-y-4">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleInternDragEnd}>
+              <SortableContext items={internships.map(e => e.id)} strategy={verticalListSortingStrategy}>
+                {internships.map((intern, idx) => (
+                  <SortableCard key={intern.id} id={intern.id}>
+                    <Card className="shadow-card ml-2">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1"><Label className="text-xs">Company</Label><Input value={intern.company} onChange={e => updateIntern(idx, "company", e.target.value)} className="h-8 text-sm" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Role</Label><Input value={intern.role} onChange={e => updateIntern(idx, "role", e.target.value)} className="h-8 text-sm" /></div>
+                        </div>
+                        <div className="space-y-1"><Label className="text-xs">Period</Label><Input value={intern.period} onChange={e => updateIntern(idx, "period", e.target.value)} className="h-8 text-sm" placeholder="e.g., Feb 2026 - Present" /></div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Description (one per line)</Label>
+                          <Textarea rows={3} value={intern.bullets.join("\n")} onChange={e => updateIntern(idx, "bullets", e.target.value.split("\n"))} className="text-sm" />
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeIntern(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
+                      </CardContent>
+                    </Card>
+                  </SortableCard>
+                ))}
+              </SortableContext>
+            </DndContext>
+            <Button variant="outline" className="w-full" onClick={addInternship}><Plus className="h-4 w-4 mr-2" /> Add Internship</Button>
+          </div>
+        );
+
       case "education":
         return (
           <div className="space-y-4">
@@ -386,7 +461,11 @@ export default function ResumeBuilderPage() {
                           <div className="space-y-1"><Label className="text-xs">School</Label><Input value={edu.school} onChange={e => updateEdu(idx, "school", e.target.value)} className="h-8 text-sm" /></div>
                           <div className="space-y-1"><Label className="text-xs">Degree</Label><Input value={edu.degree} onChange={e => updateEdu(idx, "degree", e.target.value)} className="h-8 text-sm" /></div>
                         </div>
-                        <div className="space-y-1"><Label className="text-xs">Year</Label><Input value={edu.year} onChange={e => updateEdu(idx, "year", e.target.value)} className="h-8 text-sm" /></div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="space-y-1"><Label className="text-xs">Year</Label><Input value={edu.year} onChange={e => updateEdu(idx, "year", e.target.value)} className="h-8 text-sm" placeholder="2022 – 2026" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Grade/CGPA</Label><Input value={edu.grade} onChange={e => updateEdu(idx, "grade", e.target.value)} className="h-8 text-sm" placeholder="CGPA: 8.54" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Distinction</Label><Input value={edu.distinction} onChange={e => updateEdu(idx, "distinction", e.target.value)} className="h-8 text-sm" placeholder="Honors" /></div>
+                        </div>
                         <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeEdu(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
                       </CardContent>
                     </Card>
@@ -539,10 +618,13 @@ export default function ResumeBuilderPage() {
               name={profile?.full_name || ""}
               email={user?.email || ""}
               personalDetails={personalDetails}
+              objective={objective}
+              profileSummary={profileSummary}
               title={resumeTitle}
               summary={summary}
               skills={skills}
               experiences={experiences}
+              internships={internships}
               educations={educations}
               projects={projects}
               certifications={certifications}

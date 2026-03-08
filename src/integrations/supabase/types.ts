@@ -96,9 +96,12 @@ export type Database = {
           educations: Json | null
           experiences: Json | null
           id: string
+          internships: Json | null
           job_description: string | null
           languages: Json | null
+          objective: string | null
           personal_details: Json | null
+          profile_summary: string | null
           projects: Json | null
           skills: string[] | null
           summary: string | null
@@ -117,9 +120,12 @@ export type Database = {
           educations?: Json | null
           experiences?: Json | null
           id?: string
+          internships?: Json | null
           job_description?: string | null
           languages?: Json | null
+          objective?: string | null
           personal_details?: Json | null
+          profile_summary?: string | null
           projects?: Json | null
           skills?: string[] | null
           summary?: string | null
@@ -138,9 +144,12 @@ export type Database = {
           educations?: Json | null
           experiences?: Json | null
           id?: string
+          internships?: Json | null
           job_description?: string | null
           languages?: Json | null
+          objective?: string | null
           personal_details?: Json | null
+          profile_summary?: string | null
           projects?: Json | null
           skills?: string[] | null
           summary?: string | null
