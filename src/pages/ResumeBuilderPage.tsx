@@ -419,6 +419,35 @@ export default function ResumeBuilderPage() {
           </div>
         );
 
+      case "internship":
+        return (
+          <div className="space-y-4">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleInternDragEnd}>
+              <SortableContext items={internships.map(e => e.id)} strategy={verticalListSortingStrategy}>
+                {internships.map((intern, idx) => (
+                  <SortableCard key={intern.id} id={intern.id}>
+                    <Card className="shadow-card ml-2">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1"><Label className="text-xs">Company</Label><Input value={intern.company} onChange={e => updateIntern(idx, "company", e.target.value)} className="h-8 text-sm" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Role</Label><Input value={intern.role} onChange={e => updateIntern(idx, "role", e.target.value)} className="h-8 text-sm" /></div>
+                        </div>
+                        <div className="space-y-1"><Label className="text-xs">Period</Label><Input value={intern.period} onChange={e => updateIntern(idx, "period", e.target.value)} className="h-8 text-sm" placeholder="e.g., Feb 2026 - Present" /></div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Description (one per line)</Label>
+                          <Textarea rows={3} value={intern.bullets.join("\n")} onChange={e => updateIntern(idx, "bullets", e.target.value.split("\n"))} className="text-sm" />
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeIntern(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
+                      </CardContent>
+                    </Card>
+                  </SortableCard>
+                ))}
+              </SortableContext>
+            </DndContext>
+            <Button variant="outline" className="w-full" onClick={addInternship}><Plus className="h-4 w-4 mr-2" /> Add Internship</Button>
+          </div>
+        );
+
       case "education":
         return (
           <div className="space-y-4">
@@ -432,7 +461,11 @@ export default function ResumeBuilderPage() {
                           <div className="space-y-1"><Label className="text-xs">School</Label><Input value={edu.school} onChange={e => updateEdu(idx, "school", e.target.value)} className="h-8 text-sm" /></div>
                           <div className="space-y-1"><Label className="text-xs">Degree</Label><Input value={edu.degree} onChange={e => updateEdu(idx, "degree", e.target.value)} className="h-8 text-sm" /></div>
                         </div>
-                        <div className="space-y-1"><Label className="text-xs">Year</Label><Input value={edu.year} onChange={e => updateEdu(idx, "year", e.target.value)} className="h-8 text-sm" /></div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="space-y-1"><Label className="text-xs">Year</Label><Input value={edu.year} onChange={e => updateEdu(idx, "year", e.target.value)} className="h-8 text-sm" placeholder="2022 – 2026" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Grade/CGPA</Label><Input value={edu.grade} onChange={e => updateEdu(idx, "grade", e.target.value)} className="h-8 text-sm" placeholder="CGPA: 8.54" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Distinction</Label><Input value={edu.distinction} onChange={e => updateEdu(idx, "distinction", e.target.value)} className="h-8 text-sm" placeholder="Honors" /></div>
+                        </div>
                         <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeEdu(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
                       </CardContent>
                     </Card>
