@@ -97,8 +97,8 @@ export default function ResumeBuilderPage() {
       summary,
       skills,
       job_description: jobDescription,
-      experiences: experiences as unknown as Record<string, unknown>[],
-      educations: educations as unknown as Record<string, unknown>[],
+      experiences: JSON.parse(JSON.stringify(experiences)),
+      educations: JSON.parse(JSON.stringify(educations)),
     };
 
     if (resumeId) {
