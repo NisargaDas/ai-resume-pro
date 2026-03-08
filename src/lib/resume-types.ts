@@ -65,9 +65,14 @@ export interface Achievement {
   text: string;
 }
 
+export interface Hobby {
+  id: string;
+  name: string;
+}
+
 export interface ResumeSection {
   id: string;
-  type: "personal" | "objective" | "profile" | "summary" | "skills" | "experience" | "internship" | "education" | "projects" | "certifications" | "languages" | "achievements";
+  type: "personal" | "objective" | "profile" | "summary" | "skills" | "experience" | "internship" | "education" | "projects" | "certifications" | "languages" | "achievements" | "hobbies";
   label: string;
 }
 
@@ -83,6 +88,7 @@ export const DEFAULT_SECTIONS: ResumeSection[] = [
   { id: "certifications", type: "certifications", label: "Certifications" },
   { id: "languages", type: "languages", label: "Languages" },
   { id: "achievements", type: "achievements", label: "Achievements" },
+  { id: "hobbies", type: "hobbies", label: "Hobbies" },
 ];
 
 export function generateId(): string {
