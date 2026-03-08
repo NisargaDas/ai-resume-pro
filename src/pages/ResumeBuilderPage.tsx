@@ -678,6 +678,7 @@ export default function ResumeBuilderPage() {
               certifications={certifications}
               languages={languages}
               achievements={achievements}
+              hobbies={hobbies}
               sections={sections}
             />
           </CardContent>
