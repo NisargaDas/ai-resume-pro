@@ -338,6 +338,18 @@ export default function ResumeBuilderPage() {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>Resume Title</Label>
+              <Input value={resumeTitle} onChange={e => setResumeTitle(e.target.value)} placeholder="e.g., My Resume" />
+            </div>
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input value={resumeName} onChange={e => setResumeName(e.target.value)} placeholder="e.g., John Doe" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={resumeEmail} onChange={e => setResumeEmail(e.target.value)} placeholder="e.g., john@example.com" />
+            </div>
+            <div className="space-y-2">
               <Label>Phone Number</Label>
               <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="e.g., +1 234 567 8900" />
             </div>
