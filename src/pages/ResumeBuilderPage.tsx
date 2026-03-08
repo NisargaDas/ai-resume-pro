@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, Sparkles, Download, Save, User, Briefcase,
-  GraduationCap, Code, Award, Languages as LanguagesIcon, Trophy, GripVertical,
+  GraduationCap, Code, Award, Languages as LanguagesIcon, Trophy, GripVertical, FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,7 +25,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import {
   Experience, Education, Project, Certification, Language, Achievement,
-  ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF,
+  ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF, downloadResumeWord,
 } from "@/lib/resume-types";
 
 // ── Sortable wrapper ──
@@ -228,7 +228,22 @@ export default function ResumeBuilderPage() {
     }
   };
 
-  // ── AI ──
+  // ── Word ──
+  const handleWord = async () => {
+    toast({ title: "Generating Word document..." });
+    try {
+      await downloadResumeWord({
+        name: profile?.full_name || "",
+        email: user?.email || "",
+        summary, skills, experiences, educations, projects,
+        certifications, languages, achievements, sections,
+      }, resumeTitle);
+      toast({ title: "Word document downloaded!" });
+      if (resumeId) await supabase.from("resumes").update({ downloads: (await supabase.from("resumes").select("downloads").eq("id", resumeId).single()).data?.downloads! + 1 }).eq("id", resumeId);
+    } catch (e: any) {
+      toast({ title: "Word Error", description: e.message, variant: "destructive" });
+    }
+  };
   const handleAISummary = async () => {
     setAiLoading(true);
     try {
@@ -451,6 +466,9 @@ export default function ResumeBuilderPage() {
             </Button>
             <Button variant="outline" size="sm" onClick={handlePDF}>
               <Download className="h-4 w-4 mr-1" /> PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleWord}>
+              <FileText className="h-4 w-4 mr-1" /> Word
             </Button>
             <Button size="sm" className="gradient-primary text-primary-foreground" onClick={handleAISummary} disabled={aiLoading}>
               <Sparkles className="h-4 w-4 mr-1" /> {aiLoading ? "Working..." : "AI Improve"}
