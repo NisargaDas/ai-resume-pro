@@ -136,7 +136,10 @@ export default function ResumeBuilderPage() {
           setLanguages((data.languages as unknown as Language[]) || []);
           setAchievements((data.achievements as unknown as Achievement[]) || []);
           setHobbies(((data as any).hobbies as unknown as Hobby[]) || []);
-          setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
+          const pd = (data.personal_details as any) || {};
+          setPersonalDetails({ phone: pd.phone || "", gender: pd.gender || "", dob: pd.dob || "", linkedin: pd.linkedin || "", portfolio: pd.portfolio || "" });
+          setResumeName(pd.name || "");
+          setResumeEmail(pd.email || "");
           setResumeId(data.id);
         }
         setLoading(false);
