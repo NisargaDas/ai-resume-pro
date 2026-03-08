@@ -109,6 +109,7 @@ export async function downloadResumePDF(element: HTMLElement, title: string) {
 export interface ResumeExportData {
   name: string;
   email: string;
+  personalDetails: PersonalDetails;
   summary: string;
   skills: string[];
   experiences: Experience[];
