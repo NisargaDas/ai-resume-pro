@@ -233,6 +233,7 @@ export default function ResumeBuilderPage() {
       certifications: JSON.parse(JSON.stringify(certifications)),
       languages: JSON.parse(JSON.stringify(languages)),
       achievements: JSON.parse(JSON.stringify(achievements)),
+      hobbies: JSON.parse(JSON.stringify(hobbies)),
       personal_details: JSON.parse(JSON.stringify(personalDetails)),
     };
     if (resumeId) {
