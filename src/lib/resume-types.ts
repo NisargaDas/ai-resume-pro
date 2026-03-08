@@ -350,7 +350,14 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
           }
         }
         break;
-      default:
+      case "hobbies":
+        if (data.hobbies.filter(h => h.name.trim()).length > 0) {
+          addHeading("Hobbies");
+          children.push(new Paragraph({
+            children: [new TextRun({ text: data.hobbies.map(h => h.name).join("  •  "), size: 20, font: "Calibri" })],
+            spacing: { after: 120 },
+          }));
+        }
         break;
     }
   }
