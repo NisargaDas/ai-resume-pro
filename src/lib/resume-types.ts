@@ -6,6 +6,13 @@ import {
 } from "docx";
 import { saveAs } from "file-saver";
 
+export interface PersonalDetails {
+  phone: string;
+  gender: string;
+  linkedin: string;
+  portfolio: string;
+}
+
 export interface Experience {
   id: string;
   company: string;
@@ -49,11 +56,12 @@ export interface Achievement {
 
 export interface ResumeSection {
   id: string;
-  type: "summary" | "skills" | "experience" | "education" | "projects" | "certifications" | "languages" | "achievements";
+  type: "personal" | "summary" | "skills" | "experience" | "education" | "projects" | "certifications" | "languages" | "achievements";
   label: string;
 }
 
 export const DEFAULT_SECTIONS: ResumeSection[] = [
+  { id: "personal", type: "personal", label: "Personal Details" },
   { id: "summary", type: "summary", label: "Summary" },
   { id: "skills", type: "skills", label: "Skills" },
   { id: "experience", type: "experience", label: "Experience" },
@@ -101,6 +109,7 @@ export async function downloadResumePDF(element: HTMLElement, title: string) {
 export interface ResumeExportData {
   name: string;
   email: string;
+  personalDetails: PersonalDetails;
   summary: string;
   skills: string[];
   experiences: Experience[];
@@ -125,6 +134,20 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
   if (data.email) {
     children.push(new Paragraph({
       children: [new TextRun({ text: data.email, size: 20, font: "Calibri", color: "666666" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+    }));
+  }
+
+  // Personal contact line
+  const contactParts: string[] = [];
+  if (data.personalDetails.phone) contactParts.push(data.personalDetails.phone);
+  if (data.personalDetails.linkedin) contactParts.push(data.personalDetails.linkedin);
+  if (data.personalDetails.portfolio) contactParts.push(data.personalDetails.portfolio);
+  if (data.personalDetails.gender) contactParts.push(data.personalDetails.gender);
+  if (contactParts.length > 0) {
+    children.push(new Paragraph({
+      children: [new TextRun({ text: contactParts.join("  |  "), size: 18, font: "Calibri", color: "666666" })],
       alignment: AlignmentType.CENTER,
       spacing: { after: 200 },
     }));

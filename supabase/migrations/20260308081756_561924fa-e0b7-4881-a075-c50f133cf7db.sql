@@ -1,0 +1,1 @@
+ALTER TABLE public.resumes ADD COLUMN personal_details jsonb DEFAULT '{}'::jsonb;

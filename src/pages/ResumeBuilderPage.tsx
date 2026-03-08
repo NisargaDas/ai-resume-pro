@@ -24,7 +24,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import {
-  Experience, Education, Project, Certification, Language, Achievement,
+  Experience, Education, Project, Certification, Language, Achievement, PersonalDetails,
   ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF, downloadResumeWord,
 } from "@/lib/resume-types";
 
@@ -64,6 +64,7 @@ function SortableSectionTab({ section, isActive, onClick }: { section: ResumeSec
 
 // ── Section icons ──
 const SECTION_ICONS: Record<string, React.ReactNode> = {
+  personal: <User className="h-3.5 w-3.5" />,
   summary: <User className="h-3.5 w-3.5" />,
   skills: <Code className="h-3.5 w-3.5" />,
   experience: <Briefcase className="h-3.5 w-3.5" />,
@@ -96,8 +97,9 @@ export default function ResumeBuilderPage() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [personalDetails, setPersonalDetails] = useState<PersonalDetails>({ phone: "", gender: "", linkedin: "", portfolio: "" });
   const [sections, setSections] = useState<ResumeSection[]>(DEFAULT_SECTIONS);
-  const [activeSection, setActiveSection] = useState<string>("summary");
+  const [activeSection, setActiveSection] = useState<string>("personal");
   const [loading, setLoading] = useState(!!id);
 
   const sensors = useSensors(
@@ -120,6 +122,7 @@ export default function ResumeBuilderPage() {
           setCertifications((data.certifications as unknown as Certification[]) || []);
           setLanguages((data.languages as unknown as Language[]) || []);
           setAchievements((data.achievements as unknown as Achievement[]) || []);
+          setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", linkedin: "", portfolio: "" });
           setResumeId(data.id);
         }
         setLoading(false);
@@ -201,6 +204,7 @@ export default function ResumeBuilderPage() {
       certifications: JSON.parse(JSON.stringify(certifications)),
       languages: JSON.parse(JSON.stringify(languages)),
       achievements: JSON.parse(JSON.stringify(achievements)),
+      personal_details: JSON.parse(JSON.stringify(personalDetails)),
     };
     if (resumeId) {
       const { error } = await supabase.from("resumes").update(data).eq("id", resumeId);
@@ -235,6 +239,7 @@ export default function ResumeBuilderPage() {
       await downloadResumeWord({
         name: profile?.full_name || "",
         email: user?.email || "",
+        personalDetails,
         summary, skills, experiences, educations, projects,
         certifications, languages, achievements, sections,
       }, resumeTitle);
@@ -272,6 +277,28 @@ export default function ResumeBuilderPage() {
   // ── Section editor renderers ──
   const renderSectionEditor = () => {
     switch (activeSection) {
+      case "personal":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="+1 (555) 123-4567" />
+            </div>
+            <div className="space-y-2">
+              <Label>Gender</Label>
+              <Input value={personalDetails.gender} onChange={e => setPersonalDetails({ ...personalDetails, gender: e.target.value })} placeholder="e.g., Male, Female, Non-binary" />
+            </div>
+            <div className="space-y-2">
+              <Label>LinkedIn</Label>
+              <Input value={personalDetails.linkedin} onChange={e => setPersonalDetails({ ...personalDetails, linkedin: e.target.value })} placeholder="https://linkedin.com/in/yourname" />
+            </div>
+            <div className="space-y-2">
+              <Label>Portfolio</Label>
+              <Input value={personalDetails.portfolio} onChange={e => setPersonalDetails({ ...personalDetails, portfolio: e.target.value })} placeholder="https://yourportfolio.com" />
+            </div>
+          </div>
+        );
+
       case "summary":
         return (
           <div className="space-y-4">
@@ -511,6 +538,7 @@ export default function ResumeBuilderPage() {
               ref={previewRef}
               name={profile?.full_name || ""}
               email={user?.email || ""}
+              personalDetails={personalDetails}
               title={resumeTitle}
               summary={summary}
               skills={skills}
