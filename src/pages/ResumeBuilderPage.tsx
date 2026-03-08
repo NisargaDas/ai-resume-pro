@@ -106,6 +106,8 @@ export default function ResumeBuilderPage() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [hobbies, setHobbies] = useState<Hobby[]>([]);
   const [personalDetails, setPersonalDetails] = useState<PersonalDetails>({ phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
+  const [resumeName, setResumeName] = useState("");
+  const [resumeEmail, setResumeEmail] = useState("");
   const [sections, setSections] = useState<ResumeSection[]>(DEFAULT_SECTIONS);
   const [activeSection, setActiveSection] = useState<string>("personal");
   const [loading, setLoading] = useState(!!id);
@@ -134,7 +136,10 @@ export default function ResumeBuilderPage() {
           setLanguages((data.languages as unknown as Language[]) || []);
           setAchievements((data.achievements as unknown as Achievement[]) || []);
           setHobbies(((data as any).hobbies as unknown as Hobby[]) || []);
-          setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
+          const pd = (data.personal_details as any) || {};
+          setPersonalDetails({ phone: pd.phone || "", gender: pd.gender || "", dob: pd.dob || "", linkedin: pd.linkedin || "", portfolio: pd.portfolio || "" });
+          setResumeName(pd.name || "");
+          setResumeEmail(pd.email || "");
           setResumeId(data.id);
         }
         setLoading(false);
@@ -160,12 +165,12 @@ export default function ResumeBuilderPage() {
         languages: JSON.parse(JSON.stringify(languages)),
         achievements: JSON.parse(JSON.stringify(achievements)),
         hobbies: JSON.parse(JSON.stringify(hobbies)),
-        personal_details: JSON.parse(JSON.stringify(personalDetails)),
+        personal_details: JSON.parse(JSON.stringify({ ...personalDetails, name: resumeName, email: resumeEmail })),
       };
       await supabase.from("resumes").update(data).eq("id", resumeId);
     }, 2000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [resumeTitle, template, summary, objective, profileSummary, skills, jobDescription, experiences, internships, educations, projects, certifications, languages, achievements, hobbies, personalDetails, resumeId, user, loading]);
+  }, [resumeTitle, template, summary, objective, profileSummary, skills, jobDescription, experiences, internships, educations, projects, certifications, languages, achievements, hobbies, personalDetails, resumeName, resumeEmail, resumeId, user, loading]);
 
   // ── CRUD helpers ──
   const addSkill = () => { if (newSkill.trim() && !skills.includes(newSkill.trim())) { setSkills([...skills, newSkill.trim()]); setNewSkill(""); } };
@@ -292,8 +297,8 @@ export default function ResumeBuilderPage() {
     toast({ title: "Generating Word document..." });
     try {
       await downloadResumeWord({
-        name: profile?.full_name || "",
-        email: user?.email || "",
+        name: resumeName,
+        email: resumeEmail,
         personalDetails, objective, profileSummary,
         summary, skills, experiences, internships, educations, projects,
         certifications, languages, achievements, hobbies, sections,
@@ -335,6 +340,18 @@ export default function ResumeBuilderPage() {
       case "personal":
         return (
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Resume Title</Label>
+              <Input value={resumeTitle} onChange={e => setResumeTitle(e.target.value)} placeholder="e.g., My Resume" />
+            </div>
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input value={resumeName} onChange={e => setResumeName(e.target.value)} placeholder="e.g., John Doe" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={resumeEmail} onChange={e => setResumeEmail(e.target.value)} placeholder="e.g., john@example.com" />
+            </div>
             <div className="space-y-2">
               <Label>Phone Number</Label>
               <Input value={personalDetails.phone} onChange={e => setPersonalDetails({ ...personalDetails, phone: e.target.value })} placeholder="e.g., +1 234 567 8900" />
@@ -668,8 +685,8 @@ export default function ResumeBuilderPage() {
           <CardContent className="p-0">
             <ResumePreview
               ref={previewRef}
-              name={profile?.full_name || ""}
-              email={user?.email || ""}
+              name={resumeName}
+              email={resumeEmail}
               personalDetails={personalDetails}
               objective={objective}
               profileSummary={profileSummary}
