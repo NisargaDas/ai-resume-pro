@@ -24,7 +24,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import {
-  Experience, Education, Project, Certification, Language, Achievement, PersonalDetails, Internship,
+  Experience, Education, Project, Certification, Language, Achievement, PersonalDetails, Internship, Hobby,
   ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF, downloadResumeWord,
 } from "@/lib/resume-types";
 
@@ -76,6 +76,7 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
   certifications: <Award className="h-3.5 w-3.5" />,
   languages: <LanguagesIcon className="h-3.5 w-3.5" />,
   achievements: <Trophy className="h-3.5 w-3.5" />,
+  hobbies: <Trophy className="h-3.5 w-3.5" />,
 };
 
 export default function ResumeBuilderPage() {
@@ -103,6 +104,7 @@ export default function ResumeBuilderPage() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [hobbies, setHobbies] = useState<Hobby[]>([]);
   const [personalDetails, setPersonalDetails] = useState<PersonalDetails>({ phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
   const [sections, setSections] = useState<ResumeSection[]>(DEFAULT_SECTIONS);
   const [activeSection, setActiveSection] = useState<string>("personal");
@@ -131,6 +133,7 @@ export default function ResumeBuilderPage() {
           setCertifications((data.certifications as unknown as Certification[]) || []);
           setLanguages((data.languages as unknown as Language[]) || []);
           setAchievements((data.achievements as unknown as Achievement[]) || []);
+          setHobbies(((data as any).hobbies as unknown as Hobby[]) || []);
           setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
           setResumeId(data.id);
         }
@@ -138,6 +141,31 @@ export default function ResumeBuilderPage() {
       });
     }
   }, [id, user]);
+
+  // ── Auto-save (debounced) ──
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!user || !resumeId || loading) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      const data = {
+        user_id: user.id, title: resumeTitle, template, summary, skills,
+        job_description: jobDescription,
+        objective, profile_summary: profileSummary,
+        experiences: JSON.parse(JSON.stringify(experiences)),
+        internships: JSON.parse(JSON.stringify(internships)),
+        educations: JSON.parse(JSON.stringify(educations)),
+        projects: JSON.parse(JSON.stringify(projects)),
+        certifications: JSON.parse(JSON.stringify(certifications)),
+        languages: JSON.parse(JSON.stringify(languages)),
+        achievements: JSON.parse(JSON.stringify(achievements)),
+        hobbies: JSON.parse(JSON.stringify(hobbies)),
+        personal_details: JSON.parse(JSON.stringify(personalDetails)),
+      };
+      await supabase.from("resumes").update(data).eq("id", resumeId);
+    }, 2000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [resumeTitle, template, summary, objective, profileSummary, skills, jobDescription, experiences, internships, educations, projects, certifications, languages, achievements, hobbies, personalDetails, resumeId, user, loading]);
 
   // ── CRUD helpers ──
   const addSkill = () => { if (newSkill.trim() && !skills.includes(newSkill.trim())) { setSkills([...skills, newSkill.trim()]); setNewSkill(""); } };
@@ -170,6 +198,10 @@ export default function ResumeBuilderPage() {
   const addAch = () => setAchievements([...achievements, { id: generateId(), text: "" }]);
   const updateAch = (idx: number, value: string) => setAchievements(achievements.map((a, i) => i === idx ? { ...a, text: value } : a));
   const removeAch = (idx: number) => setAchievements(achievements.filter((_, i) => i !== idx));
+
+  const addHobby = () => setHobbies([...hobbies, { id: generateId(), name: "" }]);
+  const updateHobby = (idx: number, value: string) => setHobbies(hobbies.map((h, i) => i === idx ? { ...h, name: value } : h));
+  const removeHobby = (idx: number) => setHobbies(hobbies.filter((_, i) => i !== idx));
 
   // ── DnD for experiences ──
   const handleExpDragEnd = (e: DragEndEvent) => {
@@ -226,6 +258,7 @@ export default function ResumeBuilderPage() {
       certifications: JSON.parse(JSON.stringify(certifications)),
       languages: JSON.parse(JSON.stringify(languages)),
       achievements: JSON.parse(JSON.stringify(achievements)),
+      hobbies: JSON.parse(JSON.stringify(hobbies)),
       personal_details: JSON.parse(JSON.stringify(personalDetails)),
     };
     if (resumeId) {
@@ -263,7 +296,7 @@ export default function ResumeBuilderPage() {
         email: user?.email || "",
         personalDetails, objective, profileSummary,
         summary, skills, experiences, internships, educations, projects,
-        certifications, languages, achievements, sections,
+        certifications, languages, achievements, hobbies, sections,
       }, resumeTitle);
       toast({ title: "Word document downloaded!" });
       if (resumeId) await supabase.from("resumes").update({ downloads: (await supabase.from("resumes").select("downloads").eq("id", resumeId).single()).data?.downloads! + 1 }).eq("id", resumeId);
@@ -555,6 +588,21 @@ export default function ResumeBuilderPage() {
           </div>
         );
 
+      case "hobbies":
+        return (
+          <div className="space-y-4">
+            {hobbies.map((hobby, idx) => (
+              <Card key={hobby.id} className="shadow-card">
+                <CardContent className="p-3 flex items-center gap-2">
+                  <Input value={hobby.name} onChange={e => updateHobby(idx, e.target.value)} className="h-8 text-sm flex-1" placeholder="e.g., Reading, Photography..." />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeHobby(idx)}><Trash2 className="h-3 w-3" /></Button>
+                </CardContent>
+              </Card>
+            ))}
+            <Button variant="outline" className="w-full" onClick={addHobby}><Plus className="h-4 w-4 mr-2" /> Add Hobby</Button>
+          </div>
+        );
+
       default: return null;
     }
   };
@@ -630,6 +678,7 @@ export default function ResumeBuilderPage() {
               certifications={certifications}
               languages={languages}
               achievements={achievements}
+              hobbies={hobbies}
               sections={sections}
             />
           </CardContent>

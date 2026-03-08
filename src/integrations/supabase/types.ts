@@ -95,6 +95,7 @@ export type Database = {
           downloads: number | null
           educations: Json | null
           experiences: Json | null
+          hobbies: Json | null
           id: string
           internships: Json | null
           job_description: string | null
@@ -119,6 +120,7 @@ export type Database = {
           downloads?: number | null
           educations?: Json | null
           experiences?: Json | null
+          hobbies?: Json | null
           id?: string
           internships?: Json | null
           job_description?: string | null
@@ -143,6 +145,7 @@ export type Database = {
           downloads?: number | null
           educations?: Json | null
           experiences?: Json | null
+          hobbies?: Json | null
           id?: string
           internships?: Json | null
           job_description?: string | null

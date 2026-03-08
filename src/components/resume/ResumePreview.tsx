@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import type { ResumeSection, Experience, Internship, Education, Project, Certification, Language, Achievement, PersonalDetails } from "@/lib/resume-types";
+import type { ResumeSection, Experience, Internship, Education, Project, Certification, Language, Achievement, Hobby, PersonalDetails } from "@/lib/resume-types";
 
 interface ResumePreviewProps {
   name: string;
@@ -17,11 +17,12 @@ interface ResumePreviewProps {
   certifications: Certification[];
   languages: Language[];
   achievements: Achievement[];
+  hobbies: Hobby[];
   sections: ResumeSection[];
 }
 
 export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
-  ({ name, email, personalDetails, objective, profileSummary, title, summary, skills, experiences, internships, educations, projects, certifications, languages, achievements, sections }, ref) => {
+  ({ name, email, personalDetails, objective, profileSummary, title, summary, skills, experiences, internships, educations, projects, certifications, languages, achievements, hobbies, sections }, ref) => {
 
     const renderExpEntries = (entries: (Experience | Internship)[]) =>
       entries.map(exp => (
@@ -187,12 +188,24 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
             </div>
           ) : null;
 
+        case "hobbies":
+          return hobbies.filter(h => h.name.trim()).length > 0 ? (
+            <div key={section.id}>
+              <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Hobbies</h3>
+              <div className="flex flex-wrap gap-1">
+                {hobbies.filter(h => h.name.trim()).map(h => (
+                  <span key={h.id} className="text-[10px] bg-accent/50 text-accent-foreground px-2 py-0.5 rounded">{h.name}</span>
+                ))}
+              </div>
+            </div>
+          ) : null;
+
         default:
           return null;
       }
     };
 
-    const hasContent = summary || objective || profileSummary || skills.length > 0 || experiences.length > 0 || internships.length > 0 || educations.length > 0 || projects.length > 0 || certifications.length > 0 || languages.length > 0 || achievements.length > 0 || personalDetails.phone || personalDetails.linkedin || personalDetails.portfolio;
+    const hasContent = summary || objective || profileSummary || skills.length > 0 || experiences.length > 0 || internships.length > 0 || educations.length > 0 || projects.length > 0 || certifications.length > 0 || languages.length > 0 || achievements.length > 0 || hobbies.length > 0 || personalDetails.phone || personalDetails.linkedin || personalDetails.portfolio;
 
     return (
       <div ref={ref} className="bg-card p-8 space-y-5" id="resume-preview">

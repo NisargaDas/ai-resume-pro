@@ -65,9 +65,14 @@ export interface Achievement {
   text: string;
 }
 
+export interface Hobby {
+  id: string;
+  name: string;
+}
+
 export interface ResumeSection {
   id: string;
-  type: "personal" | "objective" | "profile" | "summary" | "skills" | "experience" | "internship" | "education" | "projects" | "certifications" | "languages" | "achievements";
+  type: "personal" | "objective" | "profile" | "summary" | "skills" | "experience" | "internship" | "education" | "projects" | "certifications" | "languages" | "achievements" | "hobbies";
   label: string;
 }
 
@@ -83,6 +88,7 @@ export const DEFAULT_SECTIONS: ResumeSection[] = [
   { id: "certifications", type: "certifications", label: "Certifications" },
   { id: "languages", type: "languages", label: "Languages" },
   { id: "achievements", type: "achievements", label: "Achievements" },
+  { id: "hobbies", type: "hobbies", label: "Hobbies" },
 ];
 
 export function generateId(): string {
@@ -134,6 +140,7 @@ export interface ResumeExportData {
   certifications: Certification[];
   languages: Language[];
   achievements: Achievement[];
+  hobbies: Hobby[];
   sections: ResumeSection[];
 }
 
@@ -343,7 +350,14 @@ export async function downloadResumeWord(data: ResumeExportData, title: string) 
           }
         }
         break;
-      default:
+      case "hobbies":
+        if (data.hobbies.filter(h => h.name.trim()).length > 0) {
+          addHeading("Hobbies");
+          children.push(new Paragraph({
+            children: [new TextRun({ text: data.hobbies.map(h => h.name).join("  •  "), size: 20, font: "Calibri" })],
+            spacing: { after: 120 },
+          }));
+        }
         break;
     }
   }
