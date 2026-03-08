@@ -17,6 +17,7 @@ interface ResumePreviewProps {
   certifications: Certification[];
   languages: Language[];
   achievements: Achievement[];
+  hobbies: Hobby[];
   sections: ResumeSection[];
 }
 
