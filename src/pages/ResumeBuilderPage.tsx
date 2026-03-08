@@ -294,8 +294,8 @@ export default function ResumeBuilderPage() {
     toast({ title: "Generating Word document..." });
     try {
       await downloadResumeWord({
-        name: profile?.full_name || "",
-        email: user?.email || "",
+        name: resumeName,
+        email: resumeEmail,
         personalDetails, objective, profileSummary,
         summary, skills, experiences, internships, educations, projects,
         certifications, languages, achievements, hobbies, sections,
