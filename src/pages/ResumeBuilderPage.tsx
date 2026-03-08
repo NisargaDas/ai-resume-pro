@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, Sparkles, Download, Save, User, Briefcase,
-  GraduationCap, Code, Award, Languages as LanguagesIcon, Trophy, GripVertical,
+  GraduationCap, Code, Award, Languages as LanguagesIcon, Trophy, GripVertical, FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
