@@ -188,6 +188,18 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
             </div>
           ) : null;
 
+        case "hobbies":
+          return hobbies.filter(h => h.name.trim()).length > 0 ? (
+            <div key={section.id}>
+              <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Hobbies</h3>
+              <div className="flex flex-wrap gap-1">
+                {hobbies.filter(h => h.name.trim()).map(h => (
+                  <span key={h.id} className="text-[10px] bg-accent/50 text-accent-foreground px-2 py-0.5 rounded">{h.name}</span>
+                ))}
+              </div>
+            </div>
+          ) : null;
+
         default:
           return null;
       }
