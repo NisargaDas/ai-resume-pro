@@ -33,16 +33,18 @@ const App = () => (
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
-              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/builder" element={<ResumeBuilderPage />} />
-                <Route path="/builder/:id" element={<ResumeBuilderPage />} />
-                <Route path="/templates" element={<TemplatesPage />} />
-                <Route path="/history" element={<ResumeHistoryPage />} />
-                <Route path="/analytics" element={<AnalyticsPage />} />
-                <Route path="/ai-tools" element={<AIToolsPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<DashboardLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/builder" element={<ResumeBuilderPage />} />
+                  <Route path="/builder/:id" element={<ResumeBuilderPage />} />
+                  <Route path="/templates" element={<TemplatesPage />} />
+                  <Route path="/history" element={<ResumeHistoryPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/ai-tools" element={<AIToolsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Route>
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
