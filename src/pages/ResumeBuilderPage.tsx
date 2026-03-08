@@ -228,7 +228,22 @@ export default function ResumeBuilderPage() {
     }
   };
 
-  // ── AI ──
+  // ── Word ──
+  const handleWord = async () => {
+    toast({ title: "Generating Word document..." });
+    try {
+      await downloadResumeWord({
+        name: profile?.full_name || "",
+        email: user?.email || "",
+        summary, skills, experiences, educations, projects,
+        certifications, languages, achievements, sections,
+      }, resumeTitle);
+      toast({ title: "Word document downloaded!" });
+      if (resumeId) await supabase.from("resumes").update({ downloads: (await supabase.from("resumes").select("downloads").eq("id", resumeId).single()).data?.downloads! + 1 }).eq("id", resumeId);
+    } catch (e: any) {
+      toast({ title: "Word Error", description: e.message, variant: "destructive" });
+    }
+  };
   const handleAISummary = async () => {
     setAiLoading(true);
     try {
