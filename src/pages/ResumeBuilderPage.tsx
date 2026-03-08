@@ -325,6 +325,26 @@ export default function ResumeBuilderPage() {
           </div>
         );
 
+      case "objective":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Career Objective</Label>
+              <Textarea rows={4} value={objective} onChange={e => setObjective(e.target.value)} placeholder="Write your career objective..." />
+            </div>
+          </div>
+        );
+
+      case "profile":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Profile Description</Label>
+              <Textarea rows={5} value={profileSummary} onChange={e => setProfileSummary(e.target.value)} placeholder="Write a detailed profile description..." />
+            </div>
+          </div>
+        );
+
       case "summary":
         return (
           <div className="space-y-4">
