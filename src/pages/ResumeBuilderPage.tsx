@@ -142,6 +142,31 @@ export default function ResumeBuilderPage() {
     }
   }, [id, user]);
 
+  // ── Auto-save (debounced) ──
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!user || !resumeId || loading) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      const data = {
+        user_id: user.id, title: resumeTitle, template, summary, skills,
+        job_description: jobDescription,
+        objective, profile_summary: profileSummary,
+        experiences: JSON.parse(JSON.stringify(experiences)),
+        internships: JSON.parse(JSON.stringify(internships)),
+        educations: JSON.parse(JSON.stringify(educations)),
+        projects: JSON.parse(JSON.stringify(projects)),
+        certifications: JSON.parse(JSON.stringify(certifications)),
+        languages: JSON.parse(JSON.stringify(languages)),
+        achievements: JSON.parse(JSON.stringify(achievements)),
+        hobbies: JSON.parse(JSON.stringify(hobbies)),
+        personal_details: JSON.parse(JSON.stringify(personalDetails)),
+      };
+      await supabase.from("resumes").update(data).eq("id", resumeId);
+    }, 2000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [resumeTitle, template, summary, objective, profileSummary, skills, jobDescription, experiences, internships, educations, projects, certifications, languages, achievements, hobbies, personalDetails, resumeId, user, loading]);
+
   // ── CRUD helpers ──
   const addSkill = () => { if (newSkill.trim() && !skills.includes(newSkill.trim())) { setSkills([...skills, newSkill.trim()]); setNewSkill(""); } };
   const removeSkill = (s: string) => setSkills(skills.filter(x => x !== s));
