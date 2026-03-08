@@ -25,7 +25,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import {
   Experience, Education, Project, Certification, Language, Achievement,
-  ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF,
+  ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF, downloadResumeWord,
 } from "@/lib/resume-types";
 
 // ── Sortable wrapper ──
