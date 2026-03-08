@@ -613,7 +613,12 @@ export default function ResumeBuilderPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
-          <h1 className="font-display text-xl font-bold">Resume Builder</h1>
+          <Input
+            value={resumeTitle}
+            onChange={e => setResumeTitle(e.target.value)}
+            placeholder="e.g., My Resume"
+            className="font-display text-xl font-bold border-none shadow-none bg-transparent px-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 max-w-xs"
+          />
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
               <Save className="h-4 w-4 mr-1" /> {saving ? "Saving..." : "Save"}
