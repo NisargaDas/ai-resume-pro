@@ -588,6 +588,21 @@ export default function ResumeBuilderPage() {
           </div>
         );
 
+      case "hobbies":
+        return (
+          <div className="space-y-4">
+            {hobbies.map((hobby, idx) => (
+              <Card key={hobby.id} className="shadow-card">
+                <CardContent className="p-3 flex items-center gap-2">
+                  <Input value={hobby.name} onChange={e => updateHobby(idx, e.target.value)} className="h-8 text-sm flex-1" placeholder="e.g., Reading, Photography..." />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeHobby(idx)}><Trash2 className="h-3 w-3" /></Button>
+                </CardContent>
+              </Card>
+            ))}
+            <Button variant="outline" className="w-full" onClick={addHobby}><Plus className="h-4 w-4 mr-2" /> Add Hobby</Button>
+          </div>
+        );
+
       default: return null;
     }
   };
