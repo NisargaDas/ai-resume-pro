@@ -251,8 +251,8 @@ export default function ResumeBuilderPage() {
       await downloadResumeWord({
         name: profile?.full_name || "",
         email: user?.email || "",
-        personalDetails,
-        summary, skills, experiences, educations, projects,
+        personalDetails, objective, profileSummary,
+        summary, skills, experiences, internships, educations, projects,
         certifications, languages, achievements, sections,
       }, resumeTitle);
       toast({ title: "Word document downloaded!" });
