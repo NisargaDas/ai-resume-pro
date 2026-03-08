@@ -64,6 +64,7 @@ function SortableSectionTab({ section, isActive, onClick }: { section: ResumeSec
 
 // ── Section icons ──
 const SECTION_ICONS: Record<string, React.ReactNode> = {
+  personal: <User className="h-3.5 w-3.5" />,
   summary: <User className="h-3.5 w-3.5" />,
   skills: <Code className="h-3.5 w-3.5" />,
   experience: <Briefcase className="h-3.5 w-3.5" />,
