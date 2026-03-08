@@ -516,6 +516,7 @@ export default function ResumeBuilderPage() {
               ref={previewRef}
               name={profile?.full_name || ""}
               email={user?.email || ""}
+              personalDetails={personalDetails}
               title={resumeTitle}
               summary={summary}
               skills={skills}
