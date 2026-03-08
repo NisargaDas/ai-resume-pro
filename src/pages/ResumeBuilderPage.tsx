@@ -133,6 +133,7 @@ export default function ResumeBuilderPage() {
           setCertifications((data.certifications as unknown as Certification[]) || []);
           setLanguages((data.languages as unknown as Language[]) || []);
           setAchievements((data.achievements as unknown as Achievement[]) || []);
+          setHobbies(((data as any).hobbies as unknown as Hobby[]) || []);
           setPersonalDetails((data.personal_details as unknown as PersonalDetails) || { phone: "", gender: "", dob: "", linkedin: "", portfolio: "" });
           setResumeId(data.id);
         }
