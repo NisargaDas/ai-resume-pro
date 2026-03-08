@@ -1,36 +1,65 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Sparkles, Download, Save, User, Briefcase, GraduationCap, Code } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Plus, Trash2, Sparkles, Download, Save, User, Briefcase,
+  GraduationCap, Code, Award, Languages as LanguagesIcon, Trophy, GripVertical,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { callAI, parseAIJson } from "@/lib/ai";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { ResumePreview } from "@/components/resume/ResumePreview";
+import {
+  Experience, Education, Project, Certification, Language, Achievement,
+  ResumeSection, DEFAULT_SECTIONS, generateId, downloadResumePDF,
+} from "@/lib/resume-types";
 
-interface Experience {
-  company: string;
-  role: string;
-  period: string;
-  bullets: string[];
+// ── Sortable wrapper ──
+function SortableCard({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} className="relative group">
+      <button {...attributes} {...listeners} className="absolute -left-5 top-3 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity z-10" type="button">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      {children}
+    </div>
+  );
 }
 
-interface Education {
-  school: string;
-  degree: string;
-  year: string;
-}
+// ── Section icons ──
+const SECTION_ICONS: Record<string, React.ReactNode> = {
+  summary: <User className="h-3.5 w-3.5" />,
+  skills: <Code className="h-3.5 w-3.5" />,
+  experience: <Briefcase className="h-3.5 w-3.5" />,
+  education: <GraduationCap className="h-3.5 w-3.5" />,
+  projects: <Code className="h-3.5 w-3.5" />,
+  certifications: <Award className="h-3.5 w-3.5" />,
+  languages: <LanguagesIcon className="h-3.5 w-3.5" />,
+  achievements: <Trophy className="h-3.5 w-3.5" />,
+};
 
 export default function ResumeBuilderPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const previewRef = useRef<HTMLDivElement>(null);
+
   const [saving, setSaving] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [resumeId, setResumeId] = useState<string | null>(id || null);
@@ -42,7 +71,18 @@ export default function ResumeBuilderPage() {
   const [jobDescription, setJobDescription] = useState("");
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [educations, setEducations] = useState<Education[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [sections, setSections] = useState<ResumeSection[]>(DEFAULT_SECTIONS);
+  const [activeSection, setActiveSection] = useState<string>("summary");
   const [loading, setLoading] = useState(!!id);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   useEffect(() => {
     if (id && user) {
@@ -55,6 +95,10 @@ export default function ResumeBuilderPage() {
           setJobDescription(data.job_description || "");
           setExperiences((data.experiences as unknown as Experience[]) || []);
           setEducations((data.educations as unknown as Education[]) || []);
+          setProjects((data.projects as unknown as Project[]) || []);
+          setCertifications((data.certifications as unknown as Certification[]) || []);
+          setLanguages((data.languages as unknown as Language[]) || []);
+          setAchievements((data.achievements as unknown as Achievement[]) || []);
           setResumeId(data.id);
         }
         setLoading(false);
@@ -62,71 +106,115 @@ export default function ResumeBuilderPage() {
     }
   }, [id, user]);
 
-  const addSkill = () => {
-    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      setSkills([...skills, newSkill.trim()]);
-      setNewSkill("");
+  // ── CRUD helpers ──
+  const addSkill = () => { if (newSkill.trim() && !skills.includes(newSkill.trim())) { setSkills([...skills, newSkill.trim()]); setNewSkill(""); } };
+  const removeSkill = (s: string) => setSkills(skills.filter(x => x !== s));
+
+  const addExperience = () => setExperiences([...experiences, { id: generateId(), company: "", role: "", period: "", bullets: [""] }]);
+  const updateExp = (idx: number, field: string, value: any) => setExperiences(experiences.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+  const removeExp = (idx: number) => setExperiences(experiences.filter((_, i) => i !== idx));
+
+  const addEducation = () => setEducations([...educations, { id: generateId(), school: "", degree: "", year: "" }]);
+  const updateEdu = (idx: number, field: string, value: string) => setEducations(educations.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+  const removeEdu = (idx: number) => setEducations(educations.filter((_, i) => i !== idx));
+
+  const addProject = () => setProjects([...projects, { id: generateId(), name: "", description: "", technologies: "", link: "" }]);
+  const updateProj = (idx: number, field: string, value: string) => setProjects(projects.map((p, i) => i === idx ? { ...p, [field]: value } : p));
+  const removeProj = (idx: number) => setProjects(projects.filter((_, i) => i !== idx));
+
+  const addCert = () => setCertifications([...certifications, { id: generateId(), name: "", issuer: "", year: "" }]);
+  const updateCert = (idx: number, field: string, value: string) => setCertifications(certifications.map((c, i) => i === idx ? { ...c, [field]: value } : c));
+  const removeCert = (idx: number) => setCertifications(certifications.filter((_, i) => i !== idx));
+
+  const addLang = () => setLanguages([...languages, { id: generateId(), name: "", level: "Intermediate" }]);
+  const updateLang = (idx: number, field: string, value: string) => setLanguages(languages.map((l, i) => i === idx ? { ...l, [field]: value } : l));
+  const removeLang = (idx: number) => setLanguages(languages.filter((_, i) => i !== idx));
+
+  const addAch = () => setAchievements([...achievements, { id: generateId(), text: "" }]);
+  const updateAch = (idx: number, value: string) => setAchievements(achievements.map((a, i) => i === idx ? { ...a, text: value } : a));
+  const removeAch = (idx: number) => setAchievements(achievements.filter((_, i) => i !== idx));
+
+  // ── DnD for experiences ──
+  const handleExpDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (over && active.id !== over.id) {
+      const oldIdx = experiences.findIndex(x => x.id === active.id);
+      const newIdx = experiences.findIndex(x => x.id === over.id);
+      setExperiences(arrayMove(experiences, oldIdx, newIdx));
     }
   };
 
-  const removeSkill = (skill: string) => setSkills(skills.filter(s => s !== skill));
-
-  const addExperience = () => {
-    setExperiences([...experiences, { company: "", role: "", period: "", bullets: [""] }]);
+  const handleEduDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (over && active.id !== over.id) {
+      const oldIdx = educations.findIndex(x => x.id === active.id);
+      const newIdx = educations.findIndex(x => x.id === over.id);
+      setEducations(arrayMove(educations, oldIdx, newIdx));
+    }
   };
 
-  const updateExperience = (idx: number, field: keyof Experience, value: string | string[]) => {
-    setExperiences(experiences.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+  const handleProjDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (over && active.id !== over.id) {
+      setProjects(arrayMove(projects, projects.findIndex(x => x.id === active.id), projects.findIndex(x => x.id === over.id)));
+    }
   };
 
-  const addEducation = () => {
-    setEducations([...educations, { school: "", degree: "", year: "" }]);
+  const handleSectionDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (over && active.id !== over.id) {
+      setSections(arrayMove(sections, sections.findIndex(s => s.id === active.id), sections.findIndex(s => s.id === over.id)));
+    }
   };
 
-  const updateEducation = (idx: number, field: keyof Education, value: string) => {
-    setEducations(educations.map((e, i) => i === idx ? { ...e, [field]: value } : e));
-  };
-
+  // ── Save ──
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    const resumeData = {
-      user_id: user.id,
-      title: resumeTitle,
-      template,
-      summary,
-      skills,
+    const data = {
+      user_id: user.id, title: resumeTitle, template, summary, skills,
       job_description: jobDescription,
       experiences: JSON.parse(JSON.stringify(experiences)),
       educations: JSON.parse(JSON.stringify(educations)),
+      projects: JSON.parse(JSON.stringify(projects)),
+      certifications: JSON.parse(JSON.stringify(certifications)),
+      languages: JSON.parse(JSON.stringify(languages)),
+      achievements: JSON.parse(JSON.stringify(achievements)),
     };
-
     if (resumeId) {
-      const { error } = await supabase.from("resumes").update(resumeData).eq("id", resumeId);
+      const { error } = await supabase.from("resumes").update(data).eq("id", resumeId);
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
       else toast({ title: "Resume saved!" });
     } else {
-      const { data, error } = await supabase.from("resumes").insert(resumeData).select("id").single();
+      const { data: res, error } = await supabase.from("resumes").insert(data).select("id").single();
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-      else {
-        setResumeId(data.id);
-        toast({ title: "Resume created!" });
-        navigate(`/builder/${data.id}`, { replace: true });
-      }
+      else { setResumeId(res.id); toast({ title: "Resume created!" }); navigate(`/builder/${res.id}`, { replace: true }); }
     }
     setSaving(false);
   };
 
+  // ── PDF ──
+  const handlePDF = async () => {
+    if (!previewRef.current) return;
+    toast({ title: "Generating PDF..." });
+    try {
+      await downloadResumePDF(previewRef.current, resumeTitle);
+      toast({ title: "PDF downloaded!" });
+      // Increment download count
+      if (resumeId) await supabase.from("resumes").update({ downloads: (await supabase.from("resumes").select("downloads").eq("id", resumeId).single()).data?.downloads! + 1 }).eq("id", resumeId);
+    } catch (e: any) {
+      toast({ title: "PDF Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  // ── AI ──
   const handleAISummary = async () => {
-    if (!summary && !jobDescription) { toast({ title: "Add a summary or job description first", variant: "destructive" }); return; }
     setAiLoading(true);
     try {
       const result = await callAI("improve-summary", { summary: summary || "Write a professional summary", jobDescription });
       setSummary(result);
-      toast({ title: "Summary improved by AI!" });
-    } catch (e: any) {
-      toast({ title: "AI Error", description: e.message, variant: "destructive" });
-    }
+      toast({ title: "Summary improved!" });
+    } catch (e: any) { toast({ title: "AI Error", description: e.message, variant: "destructive" }); }
     setAiLoading(false);
   };
 
@@ -136,51 +224,28 @@ export default function ResumeBuilderPage() {
     try {
       const result = await callAI("suggest-skills", { jobDescription });
       const suggested = parseAIJson<string[]>(result);
-      const newSkills = suggested.filter(s => !skills.includes(s));
-      setSkills([...skills, ...newSkills]);
-      toast({ title: `Added ${newSkills.length} skills!` });
-    } catch (e: any) {
-      toast({ title: "AI Error", description: e.message, variant: "destructive" });
-    }
+      setSkills([...skills, ...suggested.filter(s => !skills.includes(s))]);
+      toast({ title: "Skills suggested!" });
+    } catch (e: any) { toast({ title: "AI Error", description: e.message, variant: "destructive" }); }
     setAiLoading(false);
   };
 
   const profile = user?.user_metadata;
-
   if (loading) return <div className="flex items-center justify-center h-64"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
-  return (
-    <div className="h-[calc(100vh-5rem)] flex gap-6 max-w-[1600px] mx-auto">
-      {/* Editor Panel */}
-      <div className="flex-1 overflow-auto space-y-4 pr-2">
-        <div className="flex items-center justify-between">
-          <h1 className="font-display text-xl font-bold">Resume Builder</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
-              <Save className="h-4 w-4 mr-1" /> {saving ? "Saving..." : "Save"}
-            </Button>
-            <Button size="sm" className="gradient-primary text-primary-foreground" onClick={handleAISummary} disabled={aiLoading}>
-              <Sparkles className="h-4 w-4 mr-1" /> {aiLoading ? "Working..." : "AI Improve"}
-            </Button>
-          </div>
-        </div>
-
-        <Tabs defaultValue="summary" className="w-full">
-          <TabsList className="w-full justify-start flex-wrap h-auto gap-1 bg-muted p-1">
-            <TabsTrigger value="summary" className="text-xs"><User className="h-3 w-3 mr-1" />Summary</TabsTrigger>
-            <TabsTrigger value="skills" className="text-xs"><Code className="h-3 w-3 mr-1" />Skills</TabsTrigger>
-            <TabsTrigger value="experience" className="text-xs"><Briefcase className="h-3 w-3 mr-1" />Experience</TabsTrigger>
-            <TabsTrigger value="education" className="text-xs"><GraduationCap className="h-3 w-3 mr-1" />Education</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="summary" className="space-y-4 mt-4">
+  // ── Section editor renderers ──
+  const renderSectionEditor = () => {
+    switch (activeSection) {
+      case "summary":
+        return (
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label>Resume Title</Label>
-              <Input value={resumeTitle} onChange={(e) => setResumeTitle(e.target.value)} />
+              <Input value={resumeTitle} onChange={e => setResumeTitle(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Job Description (optional, for AI optimization)</Label>
-              <Textarea rows={3} placeholder="Paste the target job description..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
+              <Label>Job Description (for AI optimization)</Label>
+              <Textarea rows={3} placeholder="Paste the target job description..." value={jobDescription} onChange={e => setJobDescription(e.target.value)} />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -189,160 +254,247 @@ export default function ResumeBuilderPage() {
                   <Sparkles className="h-3 w-3 mr-1" /> AI Generate
                 </Button>
               </div>
-              <Textarea rows={4} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Write a professional summary..." />
+              <Textarea rows={4} value={summary} onChange={e => setSummary(e.target.value)} placeholder="Write a professional summary..." />
             </div>
-          </TabsContent>
+          </div>
+        );
 
-          <TabsContent value="skills" className="space-y-4 mt-4">
+      case "skills":
+        return (
+          <div className="space-y-4">
             <div className="flex gap-2">
-              <Input placeholder="Add a skill..." value={newSkill} onChange={(e) => setNewSkill(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addSkill()} />
+              <Input placeholder="Add a skill..." value={newSkill} onChange={e => setNewSkill(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addSkill())} />
               <Button onClick={addSkill} size="sm"><Plus className="h-4 w-4" /></Button>
               <Button variant="outline" size="sm" onClick={handleAISuggestSkills} disabled={aiLoading}>
                 <Sparkles className="h-4 w-4 mr-1" /> Suggest
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {skills.map((skill) => (
+              {skills.map(skill => (
                 <Badge key={skill} variant="secondary" className="px-3 py-1 text-sm gap-1">
                   {skill}
                   <button onClick={() => removeSkill(skill)} className="ml-1 hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
                 </Badge>
               ))}
+              {skills.length === 0 && <p className="text-sm text-muted-foreground">No skills added yet</p>}
             </div>
-          </TabsContent>
+          </div>
+        );
 
-          <TabsContent value="experience" className="space-y-4 mt-4">
-            {experiences.map((exp, idx) => (
-              <Card key={idx} className="shadow-card">
-                <CardContent className="p-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Company</Label>
-                      <Input value={exp.company} onChange={(e) => updateExperience(idx, "company", e.target.value)} className="h-8 text-sm" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Role</Label>
-                      <Input value={exp.role} onChange={(e) => updateExperience(idx, "role", e.target.value)} className="h-8 text-sm" />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Period</Label>
-                    <Input value={exp.period} onChange={(e) => updateExperience(idx, "period", e.target.value)} className="h-8 text-sm" placeholder="e.g., 2022 - Present" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Key Achievements (one per line)</Label>
-                    <Textarea rows={3} value={exp.bullets.join("\n")} onChange={(e) => updateExperience(idx, "bullets", e.target.value.split("\n"))} className="text-sm" />
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => setExperiences(experiences.filter((_, i) => i !== idx))}>
-                    <Trash2 className="h-3 w-3 mr-1" /> Remove
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+      case "experience":
+        return (
+          <div className="space-y-4">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleExpDragEnd}>
+              <SortableContext items={experiences.map(e => e.id)} strategy={verticalListSortingStrategy}>
+                {experiences.map((exp, idx) => (
+                  <SortableCard key={exp.id} id={exp.id}>
+                    <Card className="shadow-card ml-2">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1"><Label className="text-xs">Company</Label><Input value={exp.company} onChange={e => updateExp(idx, "company", e.target.value)} className="h-8 text-sm" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Role</Label><Input value={exp.role} onChange={e => updateExp(idx, "role", e.target.value)} className="h-8 text-sm" /></div>
+                        </div>
+                        <div className="space-y-1"><Label className="text-xs">Period</Label><Input value={exp.period} onChange={e => updateExp(idx, "period", e.target.value)} className="h-8 text-sm" placeholder="e.g., 2022 - Present" /></div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Achievements (one per line)</Label>
+                          <Textarea rows={3} value={exp.bullets.join("\n")} onChange={e => updateExp(idx, "bullets", e.target.value.split("\n"))} className="text-sm" />
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeExp(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
+                      </CardContent>
+                    </Card>
+                  </SortableCard>
+                ))}
+              </SortableContext>
+            </DndContext>
             <Button variant="outline" className="w-full" onClick={addExperience}><Plus className="h-4 w-4 mr-2" /> Add Experience</Button>
-          </TabsContent>
+          </div>
+        );
 
-          <TabsContent value="education" className="space-y-4 mt-4">
-            {educations.map((edu, idx) => (
-              <Card key={idx} className="shadow-card">
+      case "education":
+        return (
+          <div className="space-y-4">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleEduDragEnd}>
+              <SortableContext items={educations.map(e => e.id)} strategy={verticalListSortingStrategy}>
+                {educations.map((edu, idx) => (
+                  <SortableCard key={edu.id} id={edu.id}>
+                    <Card className="shadow-card ml-2">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1"><Label className="text-xs">School</Label><Input value={edu.school} onChange={e => updateEdu(idx, "school", e.target.value)} className="h-8 text-sm" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Degree</Label><Input value={edu.degree} onChange={e => updateEdu(idx, "degree", e.target.value)} className="h-8 text-sm" /></div>
+                        </div>
+                        <div className="space-y-1"><Label className="text-xs">Year</Label><Input value={edu.year} onChange={e => updateEdu(idx, "year", e.target.value)} className="h-8 text-sm" /></div>
+                        <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeEdu(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
+                      </CardContent>
+                    </Card>
+                  </SortableCard>
+                ))}
+              </SortableContext>
+            </DndContext>
+            <Button variant="outline" className="w-full" onClick={addEducation}><Plus className="h-4 w-4 mr-2" /> Add Education</Button>
+          </div>
+        );
+
+      case "projects":
+        return (
+          <div className="space-y-4">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleProjDragEnd}>
+              <SortableContext items={projects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                {projects.map((proj, idx) => (
+                  <SortableCard key={proj.id} id={proj.id}>
+                    <Card className="shadow-card ml-2">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="space-y-1"><Label className="text-xs">Project Name</Label><Input value={proj.name} onChange={e => updateProj(idx, "name", e.target.value)} className="h-8 text-sm" /></div>
+                        <div className="space-y-1"><Label className="text-xs">Description</Label><Textarea rows={2} value={proj.description} onChange={e => updateProj(idx, "description", e.target.value)} className="text-sm" /></div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1"><Label className="text-xs">Technologies</Label><Input value={proj.technologies} onChange={e => updateProj(idx, "technologies", e.target.value)} className="h-8 text-sm" placeholder="React, Node.js" /></div>
+                          <div className="space-y-1"><Label className="text-xs">Link</Label><Input value={proj.link} onChange={e => updateProj(idx, "link", e.target.value)} className="h-8 text-sm" placeholder="https://..." /></div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeProj(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
+                      </CardContent>
+                    </Card>
+                  </SortableCard>
+                ))}
+              </SortableContext>
+            </DndContext>
+            <Button variant="outline" className="w-full" onClick={addProject}><Plus className="h-4 w-4 mr-2" /> Add Project</Button>
+          </div>
+        );
+
+      case "certifications":
+        return (
+          <div className="space-y-4">
+            {certifications.map((cert, idx) => (
+              <Card key={cert.id} className="shadow-card">
                 <CardContent className="p-4 space-y-3">
+                  <div className="space-y-1"><Label className="text-xs">Certification Name</Label><Input value={cert.name} onChange={e => updateCert(idx, "name", e.target.value)} className="h-8 text-sm" /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">School</Label>
-                      <Input value={edu.school} onChange={(e) => updateEducation(idx, "school", e.target.value)} className="h-8 text-sm" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Degree</Label>
-                      <Input value={edu.degree} onChange={(e) => updateEducation(idx, "degree", e.target.value)} className="h-8 text-sm" />
-                    </div>
+                    <div className="space-y-1"><Label className="text-xs">Issuer</Label><Input value={cert.issuer} onChange={e => updateCert(idx, "issuer", e.target.value)} className="h-8 text-sm" /></div>
+                    <div className="space-y-1"><Label className="text-xs">Year</Label><Input value={cert.year} onChange={e => updateCert(idx, "year", e.target.value)} className="h-8 text-sm" /></div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Year</Label>
-                    <Input value={edu.year} onChange={(e) => updateEducation(idx, "year", e.target.value)} className="h-8 text-sm" />
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => setEducations(educations.filter((_, i) => i !== idx))}>
-                    <Trash2 className="h-3 w-3 mr-1" /> Remove
-                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeCert(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
                 </CardContent>
               </Card>
             ))}
-            <Button variant="outline" className="w-full" onClick={addEducation}><Plus className="h-4 w-4 mr-2" /> Add Education</Button>
-          </TabsContent>
-        </Tabs>
+            <Button variant="outline" className="w-full" onClick={addCert}><Plus className="h-4 w-4 mr-2" /> Add Certification</Button>
+          </div>
+        );
+
+      case "languages":
+        return (
+          <div className="space-y-4">
+            {languages.map((lang, idx) => (
+              <Card key={lang.id} className="shadow-card">
+                <CardContent className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1"><Label className="text-xs">Language</Label><Input value={lang.name} onChange={e => updateLang(idx, "name", e.target.value)} className="h-8 text-sm" /></div>
+                    <div className="space-y-1"><Label className="text-xs">Proficiency</Label><Input value={lang.level} onChange={e => updateLang(idx, "level", e.target.value)} className="h-8 text-sm" placeholder="Native, Fluent, Intermediate" /></div>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => removeLang(idx)}><Trash2 className="h-3 w-3 mr-1" /> Remove</Button>
+                </CardContent>
+              </Card>
+            ))}
+            <Button variant="outline" className="w-full" onClick={addLang}><Plus className="h-4 w-4 mr-2" /> Add Language</Button>
+          </div>
+        );
+
+      case "achievements":
+        return (
+          <div className="space-y-4">
+            {achievements.map((ach, idx) => (
+              <Card key={ach.id} className="shadow-card">
+                <CardContent className="p-3 flex items-center gap-2">
+                  <Input value={ach.text} onChange={e => updateAch(idx, e.target.value)} className="h-8 text-sm flex-1" placeholder="Describe your achievement..." />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeAch(idx)}><Trash2 className="h-3 w-3" /></Button>
+                </CardContent>
+              </Card>
+            ))}
+            <Button variant="outline" className="w-full" onClick={addAch}><Plus className="h-4 w-4 mr-2" /> Add Achievement</Button>
+          </div>
+        );
+
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="h-[calc(100vh-5rem)] flex gap-6 max-w-[1600px] mx-auto">
+      {/* Editor Panel */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4 shrink-0">
+          <h1 className="font-display text-xl font-bold">Resume Builder</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-1" /> {saving ? "Saving..." : "Save"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handlePDF}>
+              <Download className="h-4 w-4 mr-1" /> PDF
+            </Button>
+            <Button size="sm" className="gradient-primary text-primary-foreground" onClick={handleAISummary} disabled={aiLoading}>
+              <Sparkles className="h-4 w-4 mr-1" /> {aiLoading ? "Working..." : "AI Improve"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex gap-4 flex-1 min-h-0">
+          {/* Section sidebar - draggable order */}
+          <div className="w-40 shrink-0">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2 font-semibold">Sections</p>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
+              <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                {sections.map(section => {
+                  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+                  return (
+                    <div
+                      key={section.id}
+                      ref={setNodeRef}
+                      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs cursor-pointer mb-0.5 transition-colors ${
+                        activeSection === section.id ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-muted-foreground hover:bg-muted"
+                      }`}
+                      onClick={() => setActiveSection(section.id)}
+                    >
+                      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing shrink-0" type="button" onClick={e => e.stopPropagation()}>
+                        <GripVertical className="h-3 w-3" />
+                      </button>
+                      {SECTION_ICONS[section.type]}
+                      <span className="truncate">{section.label}</span>
+                    </div>
+                  );
+                })}
+              </SortableContext>
+            </DndContext>
+          </div>
+
+          {/* Active section editor */}
+          <ScrollArea className="flex-1">
+            <div className="pr-4 pb-4">
+              {renderSectionEditor()}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
 
       {/* Live Preview Panel */}
       <div className="hidden lg:block w-[480px] shrink-0">
         <Card className="shadow-elevated h-full overflow-auto">
-          <CardContent className="p-8">
-            <div className="space-y-5">
-              <div className="text-center border-b border-border pb-4">
-                <h2 className="font-display text-xl font-bold text-foreground">{profile?.full_name || "Your Name"}</h2>
-                <p className="text-sm text-muted-foreground">{resumeTitle}</p>
-                <p className="text-xs text-muted-foreground mt-1">{user?.email}</p>
-              </div>
-
-              {summary && (
-                <div>
-                  <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Summary</h3>
-                  <p className="text-xs text-foreground leading-relaxed">{summary}</p>
-                </div>
-              )}
-
-              {skills.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Skills</h3>
-                  <div className="flex flex-wrap gap-1">
-                    {skills.map((skill) => (
-                      <span key={skill} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded">{skill}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {experiences.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Experience</h3>
-                  {experiences.map((exp, i) => (
-                    <div key={i} className="mb-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">{exp.role || "Role"}</p>
-                          <p className="text-[10px] text-muted-foreground">{exp.company || "Company"}</p>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground">{exp.period}</span>
-                      </div>
-                      <ul className="mt-1 space-y-0.5">
-                        {exp.bullets.filter(b => b.trim()).map((b, j) => (
-                          <li key={j} className="text-[10px] text-foreground pl-2 relative before:content-['•'] before:absolute before:left-0 before:text-muted-foreground">{b}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {educations.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Education</h3>
-                  {educations.map((edu, i) => (
-                    <div key={i} className="flex justify-between mb-2">
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{edu.degree || "Degree"}</p>
-                        <p className="text-[10px] text-muted-foreground">{edu.school || "School"}</p>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">{edu.year}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {!summary && skills.length === 0 && experiences.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">Start filling in the editor to see your resume preview</p>
-                </div>
-              )}
-            </div>
+          <CardContent className="p-0">
+            <ResumePreview
+              ref={previewRef}
+              name={profile?.full_name || ""}
+              email={user?.email || ""}
+              title={resumeTitle}
+              summary={summary}
+              skills={skills}
+              experiences={experiences}
+              educations={educations}
+              projects={projects}
+              certifications={certifications}
+              languages={languages}
+              achievements={achievements}
+              sections={sections}
+            />
           </CardContent>
         </Card>
       </div>
