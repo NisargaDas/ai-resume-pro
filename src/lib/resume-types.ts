@@ -61,6 +61,7 @@ export interface ResumeSection {
 }
 
 export const DEFAULT_SECTIONS: ResumeSection[] = [
+  { id: "personal", type: "personal", label: "Personal Details" },
   { id: "summary", type: "summary", label: "Summary" },
   { id: "skills", type: "skills", label: "Skills" },
   { id: "experience", type: "experience", label: "Experience" },
