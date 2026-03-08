@@ -682,8 +682,8 @@ export default function ResumeBuilderPage() {
           <CardContent className="p-0">
             <ResumePreview
               ref={previewRef}
-              name={profile?.full_name || ""}
-              email={user?.email || ""}
+              name={resumeName}
+              email={resumeEmail}
               personalDetails={personalDetails}
               objective={objective}
               profileSummary={profileSummary}
