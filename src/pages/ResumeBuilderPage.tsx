@@ -208,7 +208,9 @@ export default function ResumeBuilderPage() {
     const data = {
       user_id: user.id, title: resumeTitle, template, summary, skills,
       job_description: jobDescription,
+      objective, profile_summary: profileSummary,
       experiences: JSON.parse(JSON.stringify(experiences)),
+      internships: JSON.parse(JSON.stringify(internships)),
       educations: JSON.parse(JSON.stringify(educations)),
       projects: JSON.parse(JSON.stringify(projects)),
       certifications: JSON.parse(JSON.stringify(certifications)),
